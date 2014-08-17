@@ -2,7 +2,7 @@
 #include "gen/Absyn.H"
 #include "gen/Printer.H"
 #include "typechecker/typechecker.h"
-
+#include "interpreter/interpreter.h"
 using parser::Program;
 
 Program* parse(const char* path) {
@@ -22,6 +22,10 @@ Program* parse(const char* path) {
   return parse_tree;
 }
 
+interpreter::Interpreter* GetInterpreter() {
+  return new interpreter::Interpreter();
+}
+
 int main(int argc, char ** argv) {
   Program* main;
   if (argc <= 2) {
@@ -36,13 +40,16 @@ int main(int argc, char ** argv) {
 		typechecker::Typechecker t;
 		std::string error;
 		ast::Program* program = t.Typecheck(main, &error);
-		if ( program )
-			printf("types ok\n");
-		else
-			printf("bad types %s\n", error.c_str());
+    auto interpreter = GetInterpreter();
+		if ( program ) {
+      int result = interpreter->Run(program, atoi(argv[2]));
+			printf("%d\n", result);
+		} else
+			printf("Error: %s\n", error.c_str());
 		delete main;
 		delete program;    
+		delete interpreter;
   } else
-    printf("syntax error\n");
+    printf("Syntax error\n");
   return 1;
 }
