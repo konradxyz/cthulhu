@@ -1,4 +1,5 @@
 #include "typechecker/typechecker.h"
+#include "typechecker/operators.h"
 #include "gen/Skeleton.H"
 #include <map>
 #include <string>
@@ -81,6 +82,7 @@ class ExpGenerator : public parser::Skeleton {
     parser::IntType INT_TYPE;
     map<string, parser::Type*>* globals;
     map<string, ast::Function>* functions;
+    map<string, ast::Operator*>* operators;
     vector<pair<string, const parser::Type*> > locals;
     pair<ast::Exp*, const parser::Type*> result;
 
@@ -102,6 +104,7 @@ class ExpGenerator : public parser::Skeleton {
     static ast::Exp* GenerateFunctionExp(parser::Expr* e, 
                                          map<string, parser::Type*>* globals,
                                          map<string, ast::Function>* functions,
+                                         map<string, ast::Operator*>* operators,
                                          vector<pair<string, const parser::Type*> >* params,
                                          Type* expected_type,
                                          string* error) {
@@ -109,12 +112,14 @@ class ExpGenerator : public parser::Skeleton {
       generator.globals = globals;
       generator.functions = functions;
       generator.locals = *params;
+      generator.operators = operators;
       try {
         ast::Exp* result = generator.GenerateExp(e, expected_type);
         return result;
       } catch ( const string& err ) {
         *error = err;
       }
+      return nullptr;
     }
     void visitEVar(parser::EVar *evar) {
       int i = locals.size() - 1;
@@ -125,8 +130,14 @@ class ExpGenerator : public parser::Skeleton {
         return;
       }
       if ( globals->find(evar->ident_) != globals->end() ) {
-        result = make_pair(new ast::Global(&(*functions)[evar->ident_]), (*globals)[evar->ident_]);
-        return; 
+        if ( operators->find(evar->ident_) != operators->end() ) {
+          result = make_pair(new ast::Primitive((*operators)[evar->ident_]),
+                             (*globals)[evar->ident_]);
+          return;
+        }
+        result = make_pair(new ast::Global(&(*functions)[evar->ident_]), 
+                           (*globals)[evar->ident_]);
+        return;
       }
       throw string("Unknown identifier: '" + evar->ident_ + "'"); 
     }
@@ -179,12 +190,13 @@ class FunctionGenerator : public parser::Skeleton {
     map<string, ast::Function>* functions;
     string* error;
     map<string, parser::Type*>* globals;
+    map<string, ast::Operator*>* operators;
     bool ok = true;
   public:
     void visitFnDef(parser::FnDef *fndef) {
       parser::Type* expected_type = fndef->type_;
       vector<pair<string, const parser::Type*> > params;
-      for ( int i = 0; i < fndef->listident_->size() && expected_type != nullptr; ++i ) {
+      for ( unsigned i = 0; i < fndef->listident_->size() && expected_type != nullptr; ++i ) {
         params.push_back(make_pair(fndef->listident_->at(i), ParamType(expected_type)));
         expected_type = ResultType(expected_type);
       }
@@ -197,6 +209,7 @@ class FunctionGenerator : public parser::Skeleton {
       ast::Exp* fun_exp = ExpGenerator::GenerateFunctionExp(fndef->expr_,
                                                             globals,
                                                             functions,
+                                                            operators,
                                                             &params,
                                                             expected_type,
                                                             error);
@@ -205,17 +218,19 @@ class FunctionGenerator : public parser::Skeleton {
         *error = "In function: '" + fndef->ident_1 + "': " + *error;
         return;
       }
-      (*functions)[fndef->ident_1].SetExpr(fun_exp);
+      (*functions)[fndef->ident_1].Initialize(fun_exp, params.size());
     }
 
     static bool GenerateFunctions(parser::Program* p, 
                                   map<string, ast::Function>* function,
                                   map<string, parser::Type*>* globals,
+                                  map<string, ast::Operator*>* operators,
                                   string* error) {
       FunctionGenerator generator;
       generator.functions = function;
       generator.error = error;
       generator.globals = globals;
+      generator.operators = operators;
       p->accept(&generator);
       return generator.ok; 
     }
@@ -226,6 +241,8 @@ class FunctionGenerator : public parser::Skeleton {
 
 ast::Program* Typechecker::Typecheck(parser::Program* p, std::string* error) {
   map<string, parser::Type*> globals;
+  Predefined operators;
+  operators.GetTypes(&globals);
   if ( !TypesGatherer::gatherTypes(p, &globals, error) )
     return nullptr;
   if ( globals.find("call") == globals.end() ) {
@@ -241,15 +258,26 @@ ast::Program* Typechecker::Typecheck(parser::Program* p, std::string* error) {
   }
   delete call_type;
   map<string, ast::Function>* functions = new map<string, ast::Function>();
+  auto operators_def  = new map<string, ast::Operator*>();
+  operators.GetOperators(operators_def);
+
+  //A bit tricky here:
+  //Now functions map is empty but we will fill it later
+  //So, result owns functions map right now but this map will be modified from the outside
+  //We modify object internal state without explicit communication with this object
+  //Bleh
+  auto result = new ast::Program(functions, operators_def, &(*functions)["call"]);
+
   
   if ( !FunctionGenerator::GenerateFunctions(p,
                                              functions,
                                              &globals,
+                                             operators_def,
                                              error) ) {
-    delete functions;
+    delete result;
     return nullptr;
   }
-  return new ast::Program(functions, &(*functions)["call"]);
+  return result;
 
 }
 

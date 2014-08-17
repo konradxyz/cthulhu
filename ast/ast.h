@@ -27,13 +27,22 @@ struct Exp {
 class Function {
   private:
     Exp* expr = nullptr;
+    int params;  //params count
   public:
-    void SetExpr(Exp* expr) {
+    void Initialize(Exp* expr, int params) {
       this->expr = expr;
+      this->params = params;
     }
     ~Function () {
       delete expr;
     }
+};
+
+//Right now there are only binary int operators
+class Operator {
+  public:
+    virtual int evaluate(int a, int b) = 0;
+    virtual ~Operator() {}
 };
 
 
@@ -98,7 +107,9 @@ struct Global : public Exp {
 
 
 struct Primitive : public Exp {
+    const Operator* definition;
     void accept(ExpVisitor* p) const { p->visitPrimitive(this); } 
+    Primitive(const Operator* definition) : definition(definition) {}
 };
 
 
@@ -108,11 +119,16 @@ struct Primitive : public Exp {
 class Program {
   private:
     const std::map<std::string, Function>* functions;
+    const std::map<std::string, Operator*>* operators;
     const Function* main;
   public:
     Program(const std::map<std::string, Function>* functions,
-            const Function* main) : functions(functions), main(main) {}
+            const std::map<std::string, Operator*>* operators,
+            const Function* main) : functions(functions), operators(operators), main(main) {}
     ~Program() {
+      for ( auto it = operators->begin(); it != operators->end(); ++it )
+        delete it->second;
+      delete operators;
       delete functions;
     }
 

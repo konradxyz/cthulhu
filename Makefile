@@ -8,11 +8,12 @@
 
 
 CC = g++
-CCFLAGS = -g -I gen -I . -std=gnu++0x
+CCFLAGS = -g -I gen -I . -std=gnu++0x -Wall
 FLEX = flex
 BISON = bison
 
-cthulhu: cthulhu.cpp bin/parser.o bin/Absyn.o bin/Lexer.o bin/Parser.o bin/Printer.o bin/typechecker.o bin/Skeleton.o
+cthulhu: cthulhu.cpp bin/parser.o bin/Absyn.o bin/Lexer.o bin/Parser.o bin/Printer.o \
+		bin/typechecker.o bin/Skeleton.o bin/operators.o
 	${CC} ${CCFLAGS} $^ -o cthulhu
 
 
@@ -23,7 +24,8 @@ bin/typechecker.o: typechecker/typechecker.cpp typechecker/typechecker.h ast/ast
 bin/Skeleton.o: gen/Skeleton.C gen/Skeleton.H gen/Absyn.H
 	${CC} ${CCFLAGS} -c gen/Skeleton.C -o bin/Skeleton.o
 
-
+bin/operators.o: typechecker/operators.cpp typechecker/operators.h gen/Absyn.H ast/ast.h
+	${CC} ${CCFLAGS} -c $< -o $@
 
 bin/parser.o: parser/parser.cpp parser/parser.h
 	${CC} ${CCFLAGS} -c parser/parser.cpp -o bin/parser.o
