@@ -1,0 +1,7 @@
+*.o
+*.swp
+*.swo
+gen/*
+bin/*
+Cthulhu
+.settings/*
