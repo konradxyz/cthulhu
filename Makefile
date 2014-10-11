@@ -9,7 +9,9 @@ TARGET =	Cthulhu
 $(TARGET):	$(OBJS)
 	$(CXX) -o $(TARGET) $(OBJS) $(LIBS)
 
-all:	$(TARGET)
+Test: test/Test.o
+	$(CXX) -o $@ $^ -lboost_unit_test_framework
+all:	$(TARGET) Test
 
 clean:
 	rm -f $(OBJS) $(TARGET)
