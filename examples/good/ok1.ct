@@ -1,0 +1,5 @@
+call :: int -> int
+call = fibo;
+
+fibo :: int -> int
+fibo n = if lt n 2 then n else add (fibo (sub n 2)) (fibo (sub n 1)) ;
