@@ -1,0 +1,102 @@
+In file included from memory/test.cpp:1:0:
+./memory/memory.h:112:50: error: redeclaration of ‘std::list<std::unique_ptr<memory::MemoryPiece<T> > > memory::MemoryContext<T>::allocated’
+     std::list<std::unique_ptr<MemoryPiece<T> > > allocated;
+                                                  ^
+./memory/memory.h:108:9: note: previous declaration ‘int memory::MemoryContext<T>::allocated’
+     int allocated;
+         ^
+./memory/memory.h: In member function ‘int memory::MemoryContext<T>::IncAllocated(unsigned int)’:
+./memory/memory.h:130:12: error: ‘state’ was not declared in this scope
+       if ( state != WORKING ) {
+            ^
+./memory/memory.h:135:9: error: ‘state’ was not declared in this scope
+         state = MARKING;
+         ^
+./memory/memory.h:138:14: error: ‘state’ was not declared in this scope
+       return state == MARKING ?  last_mark : 0;
+              ^
+./memory/memory.h: In member function ‘void memory::MemoryContext<T>::MarkDone(std::list<std::unique_ptr<memory::MemoryPiece<T> > >*)’:
+./memory/memory.h:144:9: error: ‘state’ was not declared in this scope
+         state = SWEEPING;
+         ^
+./memory/memory.h: In member function ‘void memory::MemoryContext<T>::SweepDone(unsigned int)’:
+./memory/memory.h:153:9: error: ‘state’ was not declared in this scope
+         state = WORKING:
+         ^
+./memory/memory.h:153:24: error: found ‘:’ in nested-name-specifier, expected ‘::’
+         state = WORKING:
+                        ^
+./memory/memory.h:153:17: error: ‘WORKING’ is not a class, namespace, or enumeration
+         state = WORKING:
+                 ^
+./memory/memory.h: At global scope:
+./memory/memory.h:179:5: error: invalid use of template-name ‘memory::MemoryContext’ without an argument list
+     MemoryContext* context;
+     ^
+./memory/memory.h:191:32: error: expected ‘)’ before ‘*’ token
+     MemoryManager(MemoryContext* ctx) : context(ctx) {
+                                ^
+./memory/memory.h: In member function ‘int memory::MemoryManager<T>::Status()’:
+./memory/memory.h:199:16: error: ‘context’ was not declared in this scope
+       status = context->IncAllocated(allocated.size() - last_amount);
+                ^
+./memory/memory.h: In member function ‘void memory::MemoryManager<T>::Sweep()’:
+./memory/memory.h:206:7: error: ‘context’ was not declared in this scope
+       context->MarkDone(&to_sweep);
+       ^
+./memory/memory.h:208:28: error: capture of non-variable ‘memory::MemoryManager<T>::status’ 
+       allocated.remove_if([status](std::unique_ptr<MemoryPiece<T>>& ptr) { return ptr->Mark() >= status; }); 
+                            ^
+./memory/memory.h:181:9: note: ‘int memory::MemoryManager<T>::status’ declared here
+     int status;
+         ^
+./memory/memory.h: In lambda function:
+./memory/memory.h:208:98: error: ‘this’ was not captured for this lambda function
+       allocated.remove_if([status](std::unique_ptr<MemoryPiece<T>>& ptr) { return ptr->Mark() >= status; }); 
+                                                                                                  ^
+memory/test.cpp: At global scope:
+memory/test.cpp:40:14: error: expected ‘)’ before ‘{’ token
+ void test2() {
+              ^
+memory/test.cpp: In function ‘void ThreadTask(int, void (*)())’:
+memory/test.cpp:43:17: error: ‘ManagedPtr’ was not declared in this scope
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                 ^
+memory/test.cpp:43:17: note: suggested alternative:
+In file included from memory/test.cpp:1:0:
+./memory/memory.h:38:7: note:   ‘memory::ManagedPtr’
+ class ManagedPtr {
+       ^
+memory/test.cpp:43:28: error: ‘T’ was not declared in this scope
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                            ^
+memory/test.cpp:43:29: error: template argument 1 is invalid
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                             ^
+memory/test.cpp:43:29: error: template argument 2 is invalid
+memory/test.cpp:43:31: error: template argument 1 is invalid
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                               ^
+memory/test.cpp:43:31: error: template argument 2 is invalid
+memory/test.cpp:43:41: error: invalid type in declaration before ‘(’ token
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                                         ^
+memory/test.cpp:43:33: warning: unused variable ‘pointers’ [-Wunused-variable]
+   vector<vector<ManagedPtr<T> > pointers(thread_count);
+                                 ^
+In file included from memory/test.cpp:1:0:
+./memory/memory.h: In instantiation of ‘memory::MemoryManager<T>* memory::MemoryManagerFactory<T>::Get() [with T = std::basic_string<char>]’:
+memory/test.cpp:17:30:   required from here
+./memory/memory.h:226:7: error: no matching function for call to ‘memory::MemoryManager<std::basic_string<char> >::MemoryManager(memory::MemoryContext<std::basic_string<char> >*)’
+       managers.push_front(std::unique_ptr<MemoryManager<T> >(
+       ^
+./memory/memory.h:226:7: note: candidates are:
+./memory/memory.h:176:7: note: memory::MemoryManager<std::basic_string<char> >::MemoryManager()
+ class MemoryManager {
+       ^
+./memory/memory.h:176:7: note:   candidate expects 0 arguments, 1 provided
+./memory/memory.h:176:7: note: memory::MemoryManager<std::basic_string<char> >::MemoryManager(const memory::MemoryManager<std::basic_string<char> >&)
+./memory/memory.h:176:7: note:   no known conversion for argument 1 from ‘memory::MemoryContext<std::basic_string<char> >*’ to ‘const memory::MemoryManager<std::basic_string<char> >&’
+./memory/memory.h:176:7: note: memory::MemoryManager<std::basic_string<char> >::MemoryManager(memory::MemoryManager<std::basic_string<char> >&&)
+./memory/memory.h:176:7: note:   no known conversion for argument 1 from ‘memory::MemoryContext<std::basic_string<char> >*’ to ‘memory::MemoryManager<std::basic_string<char> >&&’
+make: *** [memory_test] Błąd 1

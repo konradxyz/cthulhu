@@ -16,8 +16,6 @@ cthulhu: cthulhu.cpp bin/parser.o bin/Absyn.o bin/Lexer.o bin/Parser.o bin/Print
 		bin/typechecker.o bin/Skeleton.o bin/operators.o bin/interpreter.o
 	${CC} ${CCFLAGS} $^ -o cthulhu
 
-memory_test: memory/test.cpp memory/memory.h
-	${CC} ${CCFLAGS} $< -o memory_test
 
 bin/typechecker.o: typechecker/typechecker.cpp typechecker/typechecker.h ast/ast.h gen/Absyn.H gen/Skeleton.H
 	${CC} ${CCFLAGS} -c typechecker/typechecker.cpp -o bin/typechecker.o
