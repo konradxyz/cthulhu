@@ -55,10 +55,7 @@ class ExpVisitor {
     virtual void visitGlobal(const Global* p) = 0;
     virtual void visitLocal(const Local* p) = 0;
     virtual void visitPrimitive(const Primitive* p) = 0;
-<<<<<<< HEAD
-=======
     virtual ~ExpVisitor(){}
->>>>>>> memory
 };
 
 struct Let : public Exp {
