@@ -1,0 +1,43 @@
+-- programs ------------------------------------------------
+
+entrypoints Program ;
+
+RealProgram.    Program ::= [TopDef] ;
+
+FnDef.     TopDef ::= Ident "::" Type Ident [Ident] "=" Expr ";" ;
+
+
+separator TopDef "" ;
+
+
+
+separator Ident "" ;
+
+IntType.    Type1 ::= "int" ;
+FnType. Type  ::= Type1 "->" Type ;
+
+coercions  Type 1 ;
+
+-- Expressions ---------------------------------------------
+EVar.      Expr2 ::= Ident ;
+
+ELitInt.   Expr2 ::= Integer ;
+
+EApply.    Expr1 ::= Expr1 Expr2 ;
+
+ELet.      Expr ::= "let" Ident "=" Expr1 "in" Expr ;
+
+ECase.     Expr ::= "if" Expr1 "then" Expr "else" Expr ;
+
+coercions  Expr 2 ;
+
+
+
+-- comments ------------------------------------------------
+
+comment    "#" ;
+
+comment    "//" ;
+
+comment    "/*" "*/" ;
+

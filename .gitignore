@@ -4,3 +4,9 @@
 gen/*
 bin/*
 cthulhu
+gen/*.*
+gen/Test*
+bin/*
+cthulhu
+Test
+.settings/*
