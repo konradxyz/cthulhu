@@ -15,6 +15,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <cassert>
+#include "logging.h"
 
 namespace memory {
 
@@ -23,14 +24,14 @@ template
 <typename T>
 class MemoryPiece {
   private:
-    int mark;
+    char mark;
     T object;
   public:
     template<typename... Args>
     MemoryPiece(Args&&... args) : mark(0), object(std::forward<Args>(args)...) {}
     T* GetMutableObject() { return &object; }
     //Returns true if this object has already been marked, false otherwise
-    bool Mark(int new_mark) {
+    bool Mark(char new_mark) {
       if ( mark != new_mark ) {
         mark = new_mark;
         return false;
@@ -49,30 +50,53 @@ class ManagedPtr {
     T*  operator->() {
       return ptr->GetMutableObject();
     }
+    const T*  operator->() const {
+          return ptr->GetMutableObject();
+    }
     T& operator*() {
       return *(ptr->GetMutableObject());
     }
     ManagedPtr(MemoryPiece<T>*  ptr) : ptr(ptr) {}
-    bool Mark(int new_mark) {  return ptr->Mark(new_mark); }
-    int Mark() { return ptr->Mark(); }
+    bool Mark(char new_mark) {  return ptr->Mark(new_mark); }
+    char Mark() { return ptr->Mark(); }
 };
 
 class ConditionVariable {
 private:
 	std::condition_variable condition;
 	int count = 0;
-	bool waking = false;
+	enum State {
+		WORKING = 1,
+		WAKING_SINGLE = 2,
+		WAKING_ALL = 3
+	};
+	State state = WORKING;
 public:
 	void Wait(std::unique_lock<std::mutex>* lock) {
 		++count;
-		while (!waking) {
+		while (state == WORKING) {
 			condition.wait(*lock);
 		}
 		--count;
+		if ( state == WAKING_SINGLE ) {
+			state = WORKING;
+		} else {
+			if ( count > 0 )
+				condition.notify_one();
+			else {
+				state = WORKING;
+			}
+		}
 	}
 
-	void Notify() { condition.notify_one(); }
-	void NotifyAll() { condition.notify_all(); }
+	void Notify() {
+		if ( count == 0 )
+			return;
+		state = (state == WAKING_ALL) ? WAKING_ALL : WAKING_SINGLE; condition.notify_one(); }
+	void NotifyAll() {
+		if ( count == 0 )
+			return;
+		state = WAKING_ALL; condition.notify_one(); }
 
 	int Count() { return count; }
 };
@@ -89,10 +113,10 @@ class MemoryContext {
 
     std::mutex lock;
 
-    int allowed;
+    unsigned allowed;
     unsigned allocated;
     int managers_count;
-    int last_mark = 1;
+    char last_mark = 1;
     MemoryContext::State state = WORKING;
 
 
@@ -102,14 +126,14 @@ class MemoryContext {
     ConditionVariable waiting_for_sweeping_done;
     std::vector<unsigned> allocated_per_manager;
   public:
-    MemoryContext(int amount_allowed) : allowed(amount_allowed), allocated(0), managers_count(0) {}
+    MemoryContext(unsigned amount_allowed) : allowed(amount_allowed), allocated(0), managers_count(0) {}
 
     int Register() {
     	allocated_per_manager.push_back(0);
     	return managers_count++;
     }
 
-    int UpdatedAllocated(unsigned amount, int manager_id) {
+    char UpdatedAllocated(unsigned amount, int manager_id) {
       std::unique_lock<std::mutex> m(lock);
       allocated = allocated + amount - allocated_per_manager[manager_id];
       allocated_per_manager[manager_id] = amount;
@@ -121,7 +145,7 @@ class MemoryContext {
       }
       if ( allocated >= allowed ) {
         state = MARKING;
-        ++last_mark;
+        last_mark += 2; // we increase mark by 2 to make sure that we never reach 0.
       }
       return state == MARKING ?  last_mark : 0;
     }
@@ -151,15 +175,16 @@ class MemoryContext {
       }
     }
 
-    int Release() {
+    char Release() {
         std::unique_lock<std::mutex> m(lock);
-        if ( waiting_for_release.Count() == managers_count) {
+        if ( waiting_for_release.Count() + 1 == managers_count) {
         	waiting_for_release.NotifyAll();
         	state = FINALIZING;
         	return 0;
         }
 
         assert(state != SWEEPING);
+        //LOG("first " << state);
 		switch (state) {
 		case FINALIZING:
 			return 0;
@@ -168,12 +193,14 @@ class MemoryContext {
 		default:
 			waiting_for_release.Wait(&m);
 		}
+		//LOG("second " << state);
 		switch ( state ) {
 		case FINALIZING:
 			return 0;
 		case MARKING:
 			return last_mark;
 		default: {
+			LOG(state);
 			assert(false);
 			return 0;
 		}
@@ -210,20 +237,19 @@ class MemoryManager : public MemoryManagerBase {
     // returns non zero value in case when GC is needed
     // user is expected to start marking with this value immediately
     // and then call Sweep
-    int Status() {
-      //LOG(allocated.size());
-      int mark = context->UpdatedAllocated(allocated.size(), manager_id);
-      return mark;
+    char Status() {
+      return context->UpdatedAllocated(allocated.size(), manager_id);
     }
 
-    void Sweep(int mark) {
+    void Sweep(char mark) {
       context->MarkDone();
+     // int pre = allocated.size();
       allocated.remove_if([mark](std::unique_ptr<MemoryPiece<T>>& ptr) { return ptr->Mark() != mark; });
       context->SweepDone(allocated.size(), manager_id);
     }
 
     void Release() {
-     	int status = context->Release();
+     	char status = context->Release();
     	while ( status > 0) {
     		Sweep(status);
     		status = context->Release();
@@ -231,14 +257,14 @@ class MemoryManager : public MemoryManagerBase {
     }
 };
 
-#define MAX_PERIOD 100
+#define MAX_PERIOD 200
 
 template
 <typename T>
 class MemoryFunctor {
 private:
 	MemoryManager<T>* memory_manager;
-	int mark = 0;
+	char mark = 0;
 	int period = 0;
 public:
 	virtual void operator()() = 0;
@@ -256,17 +282,21 @@ public:
 		return object.Mark(mark);
 	}
 
-	void Cleanup() {
+	// Returns true if GC was run.
+	bool Cleanup() {
 		++period;
 		if ( period < MAX_PERIOD )
-			return;
+			return false;
 		period = 0;
-		int tmp = memory_manager->Status();
+		char tmp = memory_manager->Status();
 		if ( tmp == 0 )
-			return;
+			return false;
+		LOG("cleaning");
 		mark = tmp;
 		this->PerformMarking();
+		LOG("sweeping");
 		memory_manager->Sweep(mark);
+		return true;
 	}
 
 	void Finish() {
@@ -292,7 +322,7 @@ class MemoryManagerFactory {
       return result_ptr;
     }
 
-    MemoryManagerFactory(int amount_allowed) : context(amount_allowed) {}
+    MemoryManagerFactory(unsigned amount_allowed) : context(amount_allowed) {}
 };
 
 }
