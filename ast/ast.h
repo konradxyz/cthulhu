@@ -22,6 +22,7 @@ class Primitive;
 struct Exp {
   public:
     virtual ~Exp() {}
+    virtual void accept(ExpVisitor* p) const = 0;
 };
 
 class Function {
