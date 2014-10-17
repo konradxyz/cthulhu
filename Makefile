@@ -1,4 +1,4 @@
-CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -std=c++0x -I. -lboost_log
+CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -std=c++0x -I.
 
 GEN_OBJS=gen/Absyn.o gen/Lexer.o gen/Parser.o gen/Printer.o gen/Skeleton.o
 ANALYZER_OBJS=analyzer/operators.o analyzer/parser.o analyzer/typechecker.o

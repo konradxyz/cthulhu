@@ -9,6 +9,7 @@
 #define INTERPRETER_PARALLEL_THUNK_GENERATOR_H_
 #include "thunk.h"
 #include "ast/ast.h"
+#include <vector>
 namespace thunk_generator {
 
 class ThunkGenerator : public ast::ExpVisitor {
