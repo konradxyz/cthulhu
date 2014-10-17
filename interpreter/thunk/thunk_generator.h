@@ -22,7 +22,6 @@ public:
 	  void visitLocal(const ast::Local* p);
 	  void visitPrimitive(const ast::Primitive* p);
 	  thunk::ThunkPtr Generate(ast::Exp* e);
-	  ThunkGenerator
 private:
 	  // Second element tells whether this ThunkPtr has already been created.
 	  std::vector<std::pair<thunk::ThunkPtr, bool>>* locals;

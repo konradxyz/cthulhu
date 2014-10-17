@@ -27,6 +27,9 @@ public:
 	virtual ~Thunk() {
 	}
 	virtual std::string descr() = 0;
+	void accept(ThunkVisitor& v)  = 0;
+
+
 };
 
 // Note that we could replace virtual methods with some kind of template.
@@ -48,12 +51,12 @@ public:
 class ThunkWrapper {
 private:
 	char ref_counter = SINGLE;
-	ThunkPtr next;
+	//ThunkPtr next;
 	std::unique_ptr<Thunk> expr;
 public:
-	ThunkWrapper(ThunkPtr next, std::unique_ptr<Thunk> expr) :
+	/*ThunkWrapper(ThunkPtr next, std::unique_ptr<Thunk> expr) :
 			next(next), expr(expr) {
-	}
+	}*/
 	ThunkWrapper(std::unique_ptr<Thunk> expr) :
 			expr(expr) {
 	}
@@ -62,9 +65,9 @@ public:
 		return expr.get();
 	}
 
-	ThunkPtr getNext() const {
+	/*ThunkPtr getNext() const {
 		return next;
-	}
+	}*/
 
 	bool isSingleReference() const {
 		return ref_counter == SINGLE;
