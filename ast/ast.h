@@ -134,6 +134,9 @@ class Program {
       delete functions;
     }
 
+	const Function* getMain() const {
+		return main;
+	}
 };
 
 

@@ -9,6 +9,7 @@
 #define INTERPRETER_PARALLEL_THUNK_H_
 
 #include "utils/memory.h"
+#include "ast/ast.h"
 
 namespace thunk {
 
@@ -17,8 +18,9 @@ class IfThunk;
 class IntThunk;
 class Thunk;
 class GlobalThunk;
-class BuiltInThunk;
-class ThunkThunkPtr;
+class OperatorThunk;
+class ThunkVisitor;
+class ThunkWrapper;
 
 typedef memory::ManagedPtr<ThunkWrapper> ThunkPtr;
 
@@ -27,8 +29,14 @@ public:
 	virtual ~Thunk() {
 	}
 	virtual std::string descr() = 0;
-	void accept(ThunkVisitor& v)  = 0;
-
+	virtual void accept(ThunkVisitor& v) = 0;
+	virtual bool evaluated() {
+		return false;
+	}
+	virtual int toInt() {
+		return 0;
+	}
+	virtual std::unique_ptr<Thunk> clone() = 0;
 
 };
 
@@ -55,19 +63,25 @@ private:
 	std::unique_ptr<Thunk> expr;
 public:
 	/*ThunkWrapper(ThunkPtr next, std::unique_ptr<Thunk> expr) :
-			next(next), expr(expr) {
-	}*/
+	 next(next), expr(expr) {
+	 }*/
 	ThunkWrapper(std::unique_ptr<Thunk> expr) :
-			expr(expr) {
+			expr(expr.release()) {
 	}
 
 	Thunk* getExpr() const {
 		return expr.get();
 	}
+	std::unique_ptr<Thunk> releaseExpr() {
+		return std::unique_ptr<Thunk>(expr.release());
+	}
+	void setExpr(std::unique_ptr<Thunk> expr) {
+		this->expr.swap(expr);
+	}
 
 	/*ThunkPtr getNext() const {
-		return next;
-	}*/
+	 return next;
+	 }*/
 
 	bool isSingleReference() const {
 		return ref_counter == SINGLE;
@@ -104,6 +118,11 @@ public:
 	ThunkPtr getParam() const {
 		return param;
 	}
+	std::unique_ptr<Thunk> clone() {
+		function->incRefCounter();
+		param->incRefCounter();
+		return utils::make_unique<ApplyThunk>(function, param);
+	}
 };
 
 class IfThunk: public Thunk {
@@ -133,14 +152,17 @@ public:
 	ThunkPtr getTrueVal() const {
 		return true_val;
 	}
+	std::unique_ptr<Thunk> clone() {
+		condition->incRefCounter();
+		true_val->incRefCounter();
+		false_val->incRefCounter();
+		return utils::make_unique<IfThunk>(condition, true_val, false_val);
+	}
 };
 
 class IntThunk: public Thunk {
 private:
 	int val;
-	bool evaluated() {
-		return true;
-	}
 public:
 	IntThunk(int val) :
 			val(val) {
@@ -154,14 +176,25 @@ public:
 	int getVal() const {
 		return val;
 	}
+
+	bool evaluated() override {
+		return true;
+	}
+	int toInt() {
+		return val;
+	}
+	std::unique_ptr<Thunk> clone() {
+		return utils::make_unique<IntThunk>(val);
+	}
+
 };
 
 class GlobalThunk: public Thunk {
 private:
 	const ast::Function* function;
 public:
-	GlobalThunk(ast::Function* function) :
-			function(function) {
+	GlobalThunk(const ast::Function* function_param) :
+			function(function_param) {
 	}
 	void accept(ThunkVisitor& v) {
 		v.visitGlobal(this);
@@ -173,13 +206,16 @@ public:
 	const ast::Function* getFunction() const {
 		return function;
 	}
+	std::unique_ptr<Thunk> clone() {
+		return utils::make_unique<GlobalThunk>(function);
+	}
 };
 
 class OperatorThunk: public Thunk {
 private:
 	const ast::Operator* operator_ptr;
 public:
-	OperatorThunk(ast::Operator* operator_ptr) :
+	OperatorThunk(const ast::Operator* operator_ptr) :
 			operator_ptr(operator_ptr) {
 	}
 	void accept(ThunkVisitor& v) {
@@ -192,6 +228,9 @@ public:
 
 	const ast::Operator* getOperatorPtr() const {
 		return operator_ptr;
+	}
+	std::unique_ptr<Thunk> clone() {
+		return utils::make_unique<OperatorThunk>(operator_ptr);
 	}
 };
 

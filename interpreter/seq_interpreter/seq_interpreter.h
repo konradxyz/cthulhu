@@ -15,23 +15,16 @@
 
 namespace seq_interpreter {
 
-class SeqInterpreterThunkVisitor : public thunk::ThunkVisitor {
-public:
-	void visitApply(thunk::ApplyThunk* p);
-	void visitInt(thunk::IntThunk* p);
-	void visitIf(thunk::IfThunk* p);
-	void visitGlobal(thunk::GlobalThunk* p);
-	void visitOperator(thunk::OperatorThunk* p);
-};
-
 class ExpressionStack {
 private:
 	thunk::ThunkPtr top;
-	std::vector<std::pair<thunk::ThunkPtr, thunk::ApplyThunk*>> stack;
+	std::vector<std::pair<thunk::ThunkPtr, thunk::ThunkPtr>> stack;
 public:
-	ExpressionStack(thunk::ThunkPtr expr) : top(expr){}
+	ExpressionStack(thunk::ThunkPtr expr) :
+			top(expr) {
+	}
 
-	std::vector<thunk::ThunkPtr, thunk::ApplyThunk*>* getMutableStack() {
+	std::vector<std::pair<thunk::ThunkPtr, thunk::ThunkPtr>>* getMutableStack() {
 		return &stack;
 	}
 
@@ -44,7 +37,8 @@ public:
 	}
 };
 
-class SeqInterpreterFunctor : public memory::MemoryFunctor<thunk::Thunk> {
+class SeqInterpreterFunctor: public memory::MemoryFunctor<thunk::ThunkWrapper>,
+		public thunk::ThunkVisitor {
 private:
 	std::vector<ExpressionStack> stacks;
 	thunk_marker::ThunkMarker marker;
@@ -52,17 +46,28 @@ private:
 public:
 	void operator()();
 	void PerformMarking();
-	SeqInterpreterFunctor(thunk::ThunkPtr main) : marker(this), main(main) {
+	SeqInterpreterFunctor(thunk::ThunkPtr main,
+			memory::MemoryManager<thunk::ThunkWrapper>* manager) :
+			memory::MemoryFunctor<thunk::ThunkWrapper>(manager), marker(this), main(
+					main) {
 		stacks.emplace_back(main);
 	}
+	void visitApply(thunk::ApplyThunk* p);
+	void visitInt(thunk::IntThunk* p);
+	void visitIf(thunk::IfThunk* p);
+	void visitGlobal(thunk::GlobalThunk* p);
+	void visitOperator(thunk::OperatorThunk* p);
+	// Assumes that stacks is not empty
+	void NextConfiguration();
 
 };
 
-class SeqInterpreter : public interpreter::Interpreter {
+class SeqInterpreter: public interpreter::Interpreter {
 
+public:
+	virtual int Run(const ast::Program* program, int param);
 };
 
 }
-
 
 #endif /* INTERPRETER_PARALLEL_SEQ_INTERPRETER_H_ */

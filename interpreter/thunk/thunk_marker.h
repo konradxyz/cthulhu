@@ -9,6 +9,7 @@
 #define THUNK_MARKER_H_
 
 #include "utils/memory.h"
+#include "thunk.h"
 
 namespace thunk_marker {
 

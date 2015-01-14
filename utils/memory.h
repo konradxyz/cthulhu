@@ -56,7 +56,7 @@ class ManagedPtr {
     T& operator*() {
       return *(ptr->GetMutableObject());
     }
-    ManagedPtr(MemoryPiece<T>*  ptr) : ptr(ptr) {}
+    ManagedPtr(MemoryPiece<T>* ptr) : ptr(ptr) {}
     bool Mark(char new_mark) {  return ptr->Mark(new_mark); }
     char Mark() { return ptr->Mark(); }
 };
