@@ -12,7 +12,7 @@
 #include <iostream>
 #include <thread>
 
-#define LOG(x) {std::cerr << "Thread " << std::this_thread::get_id() << ": " <<  x << std::endl;}
+#define LOG(level, msg) { BOOST_LOG_TRIVIAL(level) << msg; }
 
 
 
