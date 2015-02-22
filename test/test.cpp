@@ -12,8 +12,6 @@
 #include <atomic>
 #include <iostream>
 #include <thread>
-#include "operations/operations.h"
-#include "operations/executor.h"
 #include "utils/ptr.h"
 #include "utils/logging.h"
 
@@ -116,62 +114,3 @@ BOOST_AUTO_TEST_CASE(simple) {
 
 }
 
-/*
-BOOST_AUTO_TEST_CASE(operatorTest) {
-	auto env = utils::make_unique<Environment>(3, 2);
-	*env->getValues() = {
-			std::make_shared<IntValue>(3),
-			std::make_shared<IntValue>(5),
-			nullptr
-	};
-	auto op =
-			utils::make_unique<GetRealValueFromEnvOperation>(0) >>=
-			utils::make_unique<SetRealValueForOperatorOperation>(0) >>=
-			utils::make_unique<GetRealValueFromEnvOperation>(1) >>=
-			utils::make_unique<SetRealValueForOperatorOperation>(1) >>=
-			utils::make_unique<EvaluateBinaryOperatorOperation<std::plus<int>>>(0, 1, 2) >>=
-			utils::make_unique<TrailingGetOperation>(2) >>=
-			utils::make_unique<EqualOperation>(utils::make_unique<IntValue>(8));
-	op->setEnvironment(std::move(env));
-	Executor::perform(std::move(op), nullptr);
-
-}
-
-std::unique_ptr<OperationWrapper> getWrapper(std::unique_ptr<TrailingGetOperation>&& op) {
-	auto oper = op.get();
-	return utils::make_unique<OperationWrapper>(std::move(op), oper);
-}
-
-BOOST_AUTO_TEST_CASE(ifelsetrueTest) {
-	auto env = utils::make_unique<Environment>(3, 0);
-	*env->getValues() = {
-			std::make_shared<IntValue>(1),
-			std::make_shared<IntValue>(1),
-			std::make_shared<IntValue>(0)
-	};
-	auto op =
-			utils::make_unique<GetRealValueFromEnvOperation>(0) >>=
-			utils::make_unique<IfElseTrailingOperation>(getWrapper(utils::make_unique<TrailingGetOperation>(1)), getWrapper(utils::make_unique<TrailingGetOperation>(2))) >>=
-			utils::make_unique<EqualOperation>(utils::make_unique<IntValue>(1));
-	op->setEnvironment(std::move(env));
-	Executor::perform(std::move(op), nullptr);
-
-}
-
-
-BOOST_AUTO_TEST_CASE(ifelsefalseTest) {
-	auto env = utils::make_unique<Environment>(3, 0);
-	*env->getValues() = {
-			std::make_shared<IntValue>(0),
-			std::make_shared<IntValue>(1),
-			std::make_shared<IntValue>(0)
-	};
-	auto op =
-			utils::make_unique<GetRealValueFromEnvOperation>(0) >>=
-			utils::make_unique<IfElseTrailingOperation>(getWrapper(utils::make_unique<TrailingGetOperation>(1)), getWrapper(utils::make_unique<TrailingGetOperation>(2))) >>=
-			utils::make_unique<EqualOperation>(utils::make_unique<IntValue>(0));
-	op->setEnvironment(std::move(env));
-	Executor::perform(std::move(op), nullptr);
-
-}
-*/

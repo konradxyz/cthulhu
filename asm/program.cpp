@@ -17,7 +17,7 @@ std::unique_ptr<Context> Program::generateStartingContext(int param, utils::Allo
 	auto instruction =
 			allocator->alloc<CallFunction>(main, std::vector<unsigned>({0}),
 			allocator->alloc<MoveFromA>(0,
-			allocator->alloc<dev::Load>(0, 0,
+			allocator->alloc<Load>(0, 0,
 			allocator->alloc<StoreResult>(keeper, 0))));
 	result->nextInstruction = instruction;
 	return std::move(result);

@@ -48,8 +48,6 @@ std::unique_ptr<Context> Return::perform(std::unique_ptr<Context>&& context) con
 	return std::move(context);
 }
 
-namespace dev {
-
 std::unique_ptr<Context> Load::perform(std::unique_ptr<Context>&& context) const {
 	auto frame = context->currentFrame;
 	frame->temporaryValues[target] = frame->environment[source]->getValue();
@@ -68,7 +66,6 @@ std::unique_ptr<Context> IfElseInstruction::perform(
 	return std::move(context);
 }
 
-}
 
 }
 
