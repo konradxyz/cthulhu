@@ -32,8 +32,6 @@ struct Context {
 	std::vector<std::unique_ptr<Frame>> frames;
 	Frame* currentFrame;
 	std::shared_ptr<ValueWrapper> accumulator;
-	Accumulator lAccumulator;
-	Accumulator rAccumulator;
 	const Instruction* nextInstruction;
 
 public:
@@ -45,11 +43,6 @@ public:
 	void removeLastFrame() {
 		frames.pop_back();
 		currentFrame = frames.back().get();
-	}
-
-
-	int intFromLAccumulator() {
-		return static_cast<const IntValue*>(lAccumulator.value)->getValue();
 	}
 
 	int intFromTemporary(unsigned id) const {

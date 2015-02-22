@@ -83,24 +83,7 @@ BOOST_AUTO_TEST_CASE(universeInOrder) {
 	BOOST_CHECK(2 + 2 == 4);
 }
 
-BOOST_AUTO_TEST_CASE(id) {
-	programTest(0, 13, 13);
-}
 
-
-BOOST_AUTO_TEST_CASE(twice) {
-	programTest(1, 13, 26);
-}
-
-
-
-BOOST_AUTO_TEST_CASE(triple) {
-	programTest(3, 13, 39);
-}
-
-BOOST_AUTO_TEST_CASE(fibo) {
-	programTest(4, 9, 34);
-}
 
 
 BOOST_AUTO_TEST_CASE(twice6) {
@@ -109,6 +92,15 @@ BOOST_AUTO_TEST_CASE(twice6) {
 
 BOOST_AUTO_TEST_CASE(fibo5) {
 	programTest(5, 9, 34);
+}
+
+
+BOOST_AUTO_TEST_CASE(fibo7) {
+	programTest(7, 9, 34);
+}
+
+BOOST_AUTO_TEST_CASE(fibo8) {
+	programTest(8, 9, 34);
 }
 
 
@@ -122,50 +114,6 @@ BOOST_AUTO_TEST_CASE(simple) {
 	auto ctx = generateContext(&env, op);
 	casm::Executor::execute(std::move(ctx));
 
-}
-
-BOOST_AUTO_TEST_CASE(add) {
-	utils::Allocator<casm::Instruction> a;
-	auto op = a.alloc<casm::LoadL>(1,
-			  a.alloc<casm::LoadR>(0,
-			  a.alloc<casm::AddInstruction>(
-			  a.alloc<casm::EqualInstruction>(5))));
-	std::vector<std::shared_ptr<casm::ValueWrapper>> env =
-		{ casm::generateValueWrapper(utils::make_unique<casm::IntValue>(2)),
-		  casm::generateValueWrapper(utils::make_unique<casm::IntValue>(3))};
-	auto ctx = generateContext(&env, op);
-	casm::Executor::execute(std::move(ctx));
-
-}
-
-BOOST_AUTO_TEST_CASE(ifelse) {
-	utils::Allocator<casm::Instruction> a;
-	auto cont = a.alloc<casm::EqualInstruction>(3);
-	auto op = a.alloc<casm::LoadL>(0,
-			  a.alloc<casm::IfElseInstruction>(
-					  a.alloc<casm::MoveA>(0, cont),
-					  a.alloc<casm::MoveA>(1, cont)
-			  ));
-	std::vector<std::shared_ptr<casm::ValueWrapper>> env =
-		{ casm::generateValueWrapper(utils::make_unique<casm::IntValue>(0)),
-		  casm::generateValueWrapper(utils::make_unique<casm::IntValue>(3))};
-	auto ctx = generateContext(&env, op);
-	casm::Executor::execute(std::move(ctx));
-}
-
-BOOST_AUTO_TEST_CASE(ifelsef) {
-	utils::Allocator<casm::Instruction> a;
-	auto cont = a.alloc<casm::EqualInstruction>(1);
-	auto op = a.alloc<casm::LoadL>(0,
-			  a.alloc<casm::IfElseInstruction>(
-					  a.alloc<casm::MoveA>(0, cont),
-					  a.alloc<casm::MoveA>(1, cont)
-			  ));
-	std::vector<std::shared_ptr<casm::ValueWrapper>> env =
-		{ casm::generateValueWrapper(utils::make_unique<casm::IntValue>(1)),
-		  casm::generateValueWrapper(utils::make_unique<casm::IntValue>(3))};
-	auto ctx = generateContext(&env, op);
-	casm::Executor::execute(std::move(ctx));
 }
 
 /*
