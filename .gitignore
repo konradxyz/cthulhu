@@ -4,6 +4,7 @@
 gen/*
 bin/*
 cthulhu
+cthulhu_test
 gen/*.*
 gen/Test*
 bin/*

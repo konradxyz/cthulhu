@@ -9,7 +9,7 @@ OBJS =
 
 LIBS =
 
-TARGET =	cthulhu
+TARGET =	cthulhu_test cthulhu
 
 all: $(TARGET)
 
@@ -26,23 +26,30 @@ define test_obj
 $(info $1/$2)
 TEST_OBJS += $(1)/$(2).o
 $(1)/$(2).o: $(1)/$(2).cpp $3
-	$(CXX) -O2 $(CXXFLAGS) -c -o $1/$2.o $1/$2.cpp
+	$(CXX) $(CXXFLAGS) -c -o $1/$2.o $1/$2.cpp
 endef
 
 $(eval $(call obj,operations,operations))
 $(eval $(call obj,operations,executor))
+$(eval $(call obj,asm,value,asm/program.h))
 
-$(eval $(call test_obj,test,test, utils/logging.h))
+$(eval $(call obj,asm,instruction,asm/value.h asm/context.h asm/program.h))
+$(eval $(call obj,asm,executor,asm/context.h))
+$(eval $(call obj,asm,program,asm/context.h))
 
-$(TARGET):	$(OBJS) $(GEN_OBJS)
-	echo $(OBJS)
-	$(CXX) -o $(TARGET) $(OBJS) $(GEN_OBJS) $(LIBS)
+
+$(eval $(call test_obj,test,test, utils/logging.h asm/context.h asm/program.h test/test.h))
 
 cthulhu_test: test/test.o $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ -lboost_unit_test_framework -lboost_log -lpthread
 
-all:	$(TARGET) test
+cthulhu.o: cthulhu.cpp test/test.h
+	$(CXX) $(CXXFLAGS) -c -o $@ cthulhu.cpp
+
+
+cthulhu: cthulhu.o $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lboost_log 
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) test
+	rm -f $(OBJS) $(TARGET) $(TEST_OBJS)
 

@@ -12,6 +12,30 @@
 
 #include "environment.h"
 
+
+class Operation;
+class TrailingOperation;
+class AcceptEnvironmentOperation;
+
+class OperationWrapper {
+public:
+	OperationWrapper(std::unique_ptr<AcceptEnvironmentOperation>&& operation,
+					 TrailingOperation* trailingOperation) : operation(std::move(operation)), trailingOperation(trailingOperation) {
+
+	}
+	std::unique_ptr<AcceptEnvironmentOperation> releaseOperation() {
+		return std::move(operation);
+	}
+
+	TrailingOperation* getTrailingOperation() {
+		return trailingOperation;
+	}
+
+private:
+	std::unique_ptr<AcceptEnvironmentOperation> operation;
+	TrailingOperation* trailingOperation;
+};
+
 class TaskQueue {
 
 };
@@ -19,6 +43,7 @@ class TaskQueue {
 class Operation {
 public:
 	virtual std::unique_ptr<Operation> perform(TaskQueue* queue) = 0;
+	//virtual std::unique_ptr<OperationWrapper> clone() = 0;
 	virtual ~Operation() {
 	}
 };
@@ -62,39 +87,26 @@ public:
 
 // Trailing operations - those will destroy environment before they would block.
 // The idea is that those operations will return value from function.
-class TrailingOperaion : public WithContinuation<AcceptRealValueOwnershipOperation>{
+class TrailingOperation : public WithContinuation<AcceptRealValueOwnershipOperation>{
 };
 
-class TrailingGetOperation : public TrailingOperaion, public AcceptEnvironmentOperation {
+class TrailingGetOperation : public TrailingOperation, public AcceptEnvironmentOperation {
 private:
 	int paramId;
 public:
 	TrailingGetOperation(int paramId) : paramId(paramId) {}
-	std::unique_ptr<Operation> perform(TaskQueue* queue) {
-		auto env = this->releaseEnvironment();
-		auto result = env->getValues()->operator [](paramId);
-		auto continuation = releaseContinuation();
-		// It might be good idea to enable_shared_from_this in here.
-		continuation->setValue(std::move(std::static_pointer_cast<RealValue>(result)));
-		return std::move(continuation);
-	}
+	std::unique_ptr<Operation> perform(TaskQueue* queue);
 };
 
-
-class GetRealValueFromEnvOperation : public AcceptEnvironmentOperation, public WithContinuation<AcceptRealValueAndEnvironmentOperation> {
+class GetRealValueFromEnvOperation: public AcceptEnvironmentOperation,
+		public WithContinuation<AcceptRealValueAndEnvironmentOperation> {
 private:
 	int paramId;
 public:
-	GetRealValueFromEnvOperation(int paramId) : paramId(paramId) {}
-	std::unique_ptr<Operation> perform(TaskQueue* queue) {
-		auto env = this->releaseEnvironment();
-		auto result = env->getValues()->operator [](paramId)->asRealValue();
-		auto continuation = releaseContinuation();
-		continuation->setEnvironment(std::move(env));
-		// TODO: this one WILL be failing.
-		continuation->setValue(result);
-		return std::move(continuation);
+	GetRealValueFromEnvOperation(int paramId) :
+			paramId(paramId) {
 	}
+	std::unique_ptr<Operation> perform(TaskQueue* queue);
 };
 
 class SetRealValueForOperatorOperation: public AcceptRealValueAndEnvironmentOperation,
@@ -105,13 +117,7 @@ public:
 	SetRealValueForOperatorOperation(int paramId) :
 			paramId(paramId) {
 	}
-	std::unique_ptr<Operation> perform(TaskQueue* queue) {
-		auto env = this->releaseEnvironment();
-		(*env->getOperatorValues())[paramId] = this->getValue();
-		auto continuation = releaseContinuation();
-		continuation->setEnvironment(std::move(env));
-		return std::move(continuation);
-	}
+	std::unique_ptr<Operation> perform(TaskQueue* queue);
 };
 template
 <class T>
@@ -138,6 +144,17 @@ public:
 		return std::move(continuation);
 	}
 
+};
+
+
+class IfElseTrailingOperation : public AcceptRealValueAndEnvironmentOperation, public TrailingOperation {
+private:
+	std::unique_ptr<OperationWrapper> trueWrapper;
+	std::unique_ptr<OperationWrapper> falseWrapper;
+public:
+	IfElseTrailingOperation(std::unique_ptr<OperationWrapper>&& trueWrapper, std::unique_ptr<OperationWrapper>&& falseWrapper) :
+		trueWrapper(std::move(trueWrapper)), falseWrapper(std::move(falseWrapper)) {}
+	std::unique_ptr<Operation> perform(TaskQueue* queue);
 };
 
 template

@@ -44,6 +44,16 @@ private:
 	int val;
 };
 
+class ApplyValue : public RealValue {
+public:
+	ApplyValue(const Function* function, std::vector<std::shared_ptr<Value>>&& arguments) :
+		function(function),
+		arguments(std::move(arguments)) {}
+private:
+	const Function* function;
+	std::vector<std::shared_ptr<Value>> arguments;
+};
+
 class AcceptRealValueOwnership {
 public:
 	std::shared_ptr<RealValue> releaseRealValue() {
