@@ -36,11 +36,12 @@
 using namespace std;
 
 int main(int argc, char ** argv) {
-	int param = atoi(argv[1]);
+	int fun = atoi(argv[1]);
+	int param = atoi(argv[2]);
 
 	utils::Allocator<casm::Instruction> alloc;
 	casm::ResultKeeper keeper;
-	auto program = generateProgram(4);
+	auto program = generateProgram(fun);
 	auto ctx = program->generateStartingContext(param, &alloc, &keeper);
 	casm::Executor::execute(std::move(ctx));
 	cout << param << " " << keeper.result << endl;

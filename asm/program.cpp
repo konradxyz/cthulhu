@@ -12,7 +12,7 @@ namespace casm {
 
 std::unique_ptr<Context> Program::generateStartingContext(int param, utils::Allocator<Instruction>* allocator, ResultKeeper* keeper) const {
 	auto result = utils::make_unique<Context>();
-	result->allocateFrame(1);
+	result->allocateFrame(1, 2);
 	result->currentFrame->environment[0] = generateValueWrapper(utils::make_unique<IntValue>(param));
 	auto instruction =
 			allocator->alloc<CallFunction>(main, std::vector<unsigned>({0}),

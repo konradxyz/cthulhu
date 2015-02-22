@@ -4,6 +4,7 @@
  *  Created on: Oct 16, 2014
  *      Author: kp
  */
+#define BOOST_LOG_DYN_LINK
 
 #ifndef UTILS_LOGGING_H_
 #define UTILS_LOGGING_H_

@@ -60,7 +60,7 @@ public:
 
 std::unique_ptr<casm::Context> generateContext(std::vector<std::shared_ptr<casm::ValueWrapper>>* values, casm::Instruction* instruction) {
 	auto res = utils::make_unique<casm::Context>();
-	res->allocateFrame(0);
+	res->allocateFrame(0, 0);
 	auto fr = res->currentFrame;
 	fr->environment.swap(*values);
 	res->nextInstruction = instruction;
@@ -101,6 +101,16 @@ BOOST_AUTO_TEST_CASE(triple) {
 BOOST_AUTO_TEST_CASE(fibo) {
 	programTest(4, 9, 34);
 }
+
+
+BOOST_AUTO_TEST_CASE(twice6) {
+	programTest(6, 13, 26);
+}
+
+BOOST_AUTO_TEST_CASE(fibo5) {
+	programTest(5, 9, 34);
+}
+
 
 
 BOOST_AUTO_TEST_CASE(simple) {

@@ -19,13 +19,15 @@ class Function {
 private:
 	const Instruction* first;
 	unsigned envSize;
+	unsigned tmpSize;
 public:
-	Function(const Instruction* first, unsigned envSize) : first(first), envSize(envSize) {}
-	Function() : first(nullptr), envSize(0) {}
+	Function(const Instruction* first, unsigned envSize, unsigned tmpSize) : first(first), envSize(envSize), tmpSize(tmpSize) {}
+	Function() : first(nullptr), envSize(0), tmpSize(0) {}
 
-	void prepare(const Instruction* first, unsigned envSize) {
+	void prepare(const Instruction* first, unsigned envSize, unsigned tmpSize) {
 		this->first = first;
 		this->envSize = envSize;
+		this->tmpSize = tmpSize;
 	}
 
 	const Instruction* getInstruction() const {
@@ -34,6 +36,10 @@ public:
 
 	unsigned getEnvSize() const {
 		return envSize;
+	}
+
+	unsigned getTmpSize() const {
+		return tmpSize;
 	}
 };
 

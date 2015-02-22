@@ -5,6 +5,7 @@
  *      Author: kp
  */
 
+#include "utils/logging.h"
 
 #include "asm/instruction.h"
 #include "asm/program.h"
@@ -74,7 +75,7 @@ std::unique_ptr<Context> IfElseInstruction::perform(
 std::unique_ptr<Context> CallFunction::perform(std::unique_ptr<Context>&& context) const {
 	context->currentFrame->nextInstruction = this->getContinuation();
 	auto previousFrame = context->currentFrame;
-	context->allocateFrame(this->function->getEnvSize());
+	context->allocateFrame(this->function->getEnvSize(), this->function->getTmpSize());
 	for ( unsigned i = 0; i < parameters.size(); ++i ) {
 		context->currentFrame->environment[i] = previousFrame->environment[parameters[i]];
 	}
@@ -91,6 +92,28 @@ std::unique_ptr<Context> Return::perform(std::unique_ptr<Context>&& context) con
 	context->removeLastFrame();
 	context->nextInstruction = context->currentFrame->nextInstruction;
 	return std::move(context);
+}
+
+namespace dev {
+
+std::unique_ptr<Context> Load::perform(std::unique_ptr<Context>&& context) const {
+	auto frame = context->currentFrame;
+	frame->temporaryValues[target] = frame->environment[source]->getValue();
+	context->nextInstruction = getContinuation();
+	return std::move(context);
+}
+
+
+std::unique_ptr<Context> IfElseInstruction::perform(
+		std::unique_ptr<Context>&& context) const {
+	int condition = context->intFromTemporary(this->conditionIndex);
+	if (condition)
+		context->nextInstruction = trueContinuation;
+	else
+		context->nextInstruction = falseContinuation;
+	return std::move(context);
+}
+
 }
 
 }

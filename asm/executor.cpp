@@ -7,6 +7,7 @@
 
 #include "asm/executor.h"
 #include "asm/instruction.h"
+#include "utils/logging.h"
 
 namespace casm {
 

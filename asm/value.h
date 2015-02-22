@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <memory>
+#include <sstream>
 
 
 namespace casm {
@@ -37,6 +38,12 @@ public:
 };
 
 class Value {
+public:
+	virtual std::string print() const {
+		return "unknown";
+	}
+
+	virtual ~Value() {}
 };
 
 class ApplyValue : public Value {
@@ -53,6 +60,13 @@ private:
 
 class IntValue : public Value {
 public:
+	std::string print() const override {
+		std::ostringstream ss;
+		ss << value;
+		std::string str = ss.str();
+
+		return std::string("(int ") + str + ")";
+	}
 	int getValue() const {
 		return value;
 	}

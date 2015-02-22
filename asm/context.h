@@ -22,7 +22,10 @@ struct Accumulator {
 
 struct Frame {
 	std::vector<std::shared_ptr<ValueWrapper>> environment;
+	std::vector<const Value*> temporaryValues;
 	const Instruction* nextInstruction;
+
+	Frame(unsigned envSize, unsigned tmpValuesCount) : environment(envSize), temporaryValues(tmpValuesCount), nextInstruction(nullptr) {}
 };
 
 struct Context {
@@ -34,10 +37,9 @@ struct Context {
 	const Instruction* nextInstruction;
 
 public:
-	void allocateFrame(unsigned size) {
-		frames.push_back(utils::make_unique<Frame>());
+	void allocateFrame(unsigned envSize, unsigned tmpSize) {
+		frames.push_back(utils::make_unique<Frame>(envSize, tmpSize));
 		currentFrame = frames.back().get();
-		currentFrame->environment.resize(size);
 	}
 
 	void removeLastFrame() {
@@ -48,6 +50,10 @@ public:
 
 	int intFromLAccumulator() {
 		return static_cast<const IntValue*>(lAccumulator.value)->getValue();
+	}
+
+	int intFromTemporary(unsigned id) const {
+		return static_cast<const IntValue*>(currentFrame->temporaryValues[id])->getValue();
 	}
 };
 

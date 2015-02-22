@@ -1,4 +1,4 @@
-CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -std=c++0x -I.
+CXXFLAGS =	-O2 -Wall -fmessage-length=0 -std=c++0x -I.
 CCX = g++
 GEN_OBJS=gen/Absyn.o gen/Lexer.o gen/Parser.o gen/Printer.o gen/Skeleton.o
 ANALYZER_OBJS=analyzer/operators.o analyzer/parser.o analyzer/typechecker.o
@@ -18,7 +18,7 @@ define obj
 $(info $1/$2)
 OBJS += $(1)/$(2).o
 $(1)/$(2).o: $(1)/$(2).cpp $(1)/$(2).h $3
-	$(CXX) -O2 $(CXXFLAGS) -c -o $1/$2.o $1/$2.cpp
+	$(CXX) $(CXXFLAGS) -c -o $1/$2.o $1/$2.cpp
 endef
 
 # $1 - directory, $2, -name $3 - headers
@@ -38,7 +38,7 @@ $(eval $(call obj,asm,executor,asm/context.h))
 $(eval $(call obj,asm,program,asm/context.h))
 
 
-$(eval $(call test_obj,test,test, utils/logging.h asm/context.h asm/program.h test/test.h))
+$(eval $(call test_obj,test,test, utils/logging.h asm/context.h asm/program.h test/test.h asm/instruction.h))
 
 cthulhu_test: test/test.o $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ -lboost_unit_test_framework -lboost_log -lpthread
@@ -47,9 +47,9 @@ cthulhu.o: cthulhu.cpp test/test.h
 	$(CXX) $(CXXFLAGS) -c -o $@ cthulhu.cpp
 
 
-cthulhu: cthulhu.o $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lboost_log 
+cthulhu: cthulhu.o $(OBJS) test/test.h
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lboost_log -lpthread
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(TEST_OBJS)
+	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) cthulhu.o
 
