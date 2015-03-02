@@ -1,4 +1,4 @@
-CXXFLAGS =	-O2 -Wall -fmessage-length=0 -std=c++0x -I.
+CXXFLAGS =	 -g -Wall -fmessage-length=0 -std=c++0x -I.
 CCX = g++
 GEN_OBJS=gen/Absyn.o gen/Lexer.o gen/Parser.o gen/Printer.o gen/Skeleton.o
 ANALYZER_OBJS=analyzer/operators.o analyzer/parser.o analyzer/typechecker.o
@@ -34,8 +34,12 @@ $(eval $(call obj,operations,executor))
 $(eval $(call obj,asm,value,asm/program.h))
 
 $(eval $(call obj,asm,instruction,asm/value.h asm/context.h asm/program.h))
-$(eval $(call obj,asm,executor,asm/context.h))
+$(eval $(call obj,asm,executor,asm/context.h asm/contextbase.h))
 $(eval $(call obj,asm,program,asm/context.h))
+$(eval $(call obj,asm,context,asm/contextbase.h asm/value.h))
+
+$(eval $(call obj,asm,futurecontext,asm/contextbase.h asm/value.h))
+$(eval $(call obj,asm,contextbase, asm/instruction.h))
 
 
 $(eval $(call test_obj,test,test, utils/logging.h asm/context.h asm/program.h test/test.h asm/instruction.h))

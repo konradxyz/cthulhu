@@ -8,33 +8,50 @@
 #ifndef ASM_VALUE_H_
 #define ASM_VALUE_H_
 
+namespace casm {
+
+class Function;
+class Value;
+class FutureContext;
+class ContextBase;
+
+}
+
 #include <vector>
 #include <memory>
 #include <sstream>
 
 
 namespace casm {
-class Function;
-class Value;
 
 enum ValueType {
 	FUTURE_VALUE = 0,
 	REAL_VALUE = 1
 };
 
+// TODO: we might improve performance by moving int to this class.
 class ValueWrapper {
 private:
 	const ValueType type;
 	std::unique_ptr<Value> value;
 
-	//std::shared_ptr<ValueWrapper> futureValue;
+	std::unique_ptr<FutureContext> future;
 public:
-	ValueWrapper() : type(FUTURE_VALUE) {}
-	ValueWrapper(std::unique_ptr<Value>&& value) : type(REAL_VALUE), value(std::move(value)) {}
+	ValueWrapper(std::unique_ptr<FutureContext>&& future);
+	ValueWrapper(std::unique_ptr<Value>&& value);
 
 	const Value* getValue() {
 		return value.get();
 	}
+
+	const ValueType getType() const {
+		return type;
+	}
+
+	FutureContext* getFutureContext() {
+		return future.get();
+	}
+	~ValueWrapper();
 };
 
 class Value {
@@ -75,7 +92,7 @@ private:
 	int value;
 };
 
-std::shared_ptr<ValueWrapper> generateFutureWrapper();
+std::shared_ptr<ValueWrapper> generateFutureWrapper(ContextBase* base);
 std::shared_ptr<ValueWrapper> generateValueWrapper(std::unique_ptr<Value>&& value);
 
 }

@@ -21,6 +21,7 @@
 #include "utils/allocator.h"
 
 #include "test/test.h"
+#include "asm/executor.h"
 
 using namespace std;
 
@@ -77,6 +78,24 @@ void programTest(int main, int param, int expected) {
 		BOOST_ASSERT(keeper.result == expected);
 }
 
+void programTestPar(int main, int param, int expected) {
+	auto program = generateProgram(main);
+	casm::Executor e(20, 2);
+	LOG(debug, "running");
+	int result = e.run(program.get(), param);
+	LOG(debug, result);
+	BOOST_ASSERT(result == expected);
+}
+
+utils::SpinLock l;
+void lockRun(int* target) {
+	for ( unsigned i = 0; i < 100000; ++i ) {
+		std::unique_lock<utils::SpinLock> m(l);
+		(*target)++;
+	}
+}
+
+
 BOOST_AUTO_TEST_CASE(universeInOrder) {
 	BOOST_CHECK(2 + 2 == 4);
 }
@@ -100,6 +119,25 @@ BOOST_AUTO_TEST_CASE(fibo7) {
 BOOST_AUTO_TEST_CASE(fibo8) {
 	programTest(8, 9, 34);
 }
+
+BOOST_AUTO_TEST_CASE(par_fibo9) {
+	programTestPar(9, 9, 34);
+}
+
+/*
+BOOST_AUTO_TEST_CASE(threadTest) {
+	int target = 0;
+	std::vector<std::thread> threads;
+	unsigned MAX = 8;
+	for ( unsigned i = 0; i < MAX; ++i )
+		threads.emplace_back(lockRun, &target);
+	for ( unsigned i = 0; i < MAX; ++i )
+			threads[i].join();
+	LOG(debug, target);
+	BOOST_ASSERT(target == MAX * 100000);
+	//programTest(8, 9, 34);
+}
+*/
 
 
 

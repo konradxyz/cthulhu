@@ -31,8 +31,8 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 
 	{
 
-		auto ret = alloc->alloc<casm::Load>(1, 1,
-				alloc->alloc<casm::Load>(2, 2,
+		auto ret = alloc->alloc<casm::seq::Load>(1, 1,
+				alloc->alloc<casm::seq::Load>(2, 2,
 						alloc->alloc<
 								casm::OperatorInstruction<std::plus<int>,
 										casm::TmpValueGet,
@@ -59,7 +59,7 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 								alloc->alloc<casm::MoveFromA>(1, fiboRec2))));
 
 		auto fibo =
-				alloc->alloc<casm::Load>(0, 0,
+				alloc->alloc<casm::seq::Load>(0, 0,
 						alloc->alloc<
 								casm::OperatorInstruction<
 										casm::LowerThanFunctor,
@@ -67,7 +67,7 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 										casm::ConstGet,
 										casm::AccUpdater>>(0, 2,
 								alloc->alloc<casm::MoveFromA>(1,
-										alloc->alloc<casm::Load>(1, 1,
+										alloc->alloc<casm::seq::Load>(1, 1,
 												alloc->alloc<
 														casm::IfElseInstruction>(
 														1,
@@ -78,7 +78,7 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 														fiboRec1)))));
 		functions[5]->prepare(fibo, 3, 3);
 
-		auto twice = alloc->alloc<casm::Load>(0, 0,
+		auto twice = alloc->alloc<casm::seq::Load>(0, 0,
 				alloc->alloc<
 						casm::OperatorInstruction<std::plus<int>,
 								casm::TmpValueGet, casm::TmpValueGet,
@@ -88,8 +88,8 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 	}
 
 	{
-		auto ret = alloc->alloc<casm::Load>(1, 1,
-				alloc->alloc<casm::Load>(2, 2,
+		auto ret = alloc->alloc<casm::seq::Load>(1, 1,
+				alloc->alloc<casm::seq::Load>(2, 2,
 						alloc->alloc<
 								casm::OperatorInstruction<std::plus<int>,
 										casm::TmpValueGet,
@@ -113,12 +113,12 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 						std::vector<unsigned>( { 1 }),
 						alloc->alloc<casm::MoveFromA>(1, fiboRec2)));
 
-		auto fibo = alloc->alloc<casm::Load>(0, 0,
+		auto fibo = alloc->alloc<casm::seq::Load>(0, 0,
 				alloc->alloc<
 						casm::OperatorInstruction<casm::LowerThanFunctor,
 								casm::TmpValueGet, casm::ConstGet,
 								casm::EnvUpdater>>(0, 2, 1,
-						alloc->alloc<casm::Load>(1, 1,
+						alloc->alloc<casm::seq::Load>(1, 1,
 								alloc->alloc<casm::IfElseInstruction>(1,
 										alloc->alloc<casm::MoveA>(0,
 												alloc->alloc<casm::Return>()),
@@ -128,8 +128,8 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 	}
 
 	{
-		auto ret = alloc->alloc<casm::Load>(1, 1,
-				alloc->alloc<casm::Load>(2, 2,
+		auto ret = alloc->alloc<casm::seq::Load>(1, 1,
+				alloc->alloc<casm::seq::Load>(2, 2,
 						alloc->alloc<
 								casm::OperatorInstruction<std::plus<int>,
 										casm::TmpValueGet,
@@ -153,7 +153,7 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 						std::vector<unsigned>( { 1 }),
 						alloc->alloc<casm::MoveFromA>(1, fiboRec2)));
 
-		auto fibo = alloc->alloc<casm::Load>(0, 0,
+		auto fibo = alloc->alloc<casm::seq::Load>(0, 0,
 				alloc->alloc<
 						casm::OperatorInstruction<casm::LowerThanFunctor,
 								casm::TmpValueGet, casm::ConstGet,
@@ -166,6 +166,48 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 		functions[8]->prepare(fibo, 3, 3);
 
 	}
+
+
+	{
+			auto ret = alloc->alloc<casm::par::Load>(1, 1,
+					alloc->alloc<casm::par::Load>(2, 2,
+							alloc->alloc<
+									casm::OperatorInstruction<std::plus<int>,
+											casm::TmpValueGet,
+											casm::TmpValueGet,
+											casm::AccUpdater>>(1, 2,
+									alloc->alloc<casm::Return>())));
+
+			auto fiboRec2 = alloc->alloc<
+					casm::OperatorInstruction<std::minus<int>,
+							casm::TmpValueGet, casm::ConstGet,
+							casm::EnvUpdater>>(0, 2, 2,
+					alloc->alloc<casm::CallFunction>(functions[9].get(),
+							std::vector<unsigned>( { 2 }),
+							alloc->alloc<casm::MoveFromA>(2, ret)));
+
+			auto fiboRec1 = alloc->alloc<
+					casm::OperatorInstruction<std::minus<int>,
+							casm::TmpValueGet, casm::ConstGet,
+							casm::EnvUpdater>>(0, 1, 1,
+					alloc->alloc<casm::par::CallFunctionPar>(functions[9].get(),
+							std::vector<unsigned>( { 1 }),
+							alloc->alloc<casm::MoveFromA>(1, fiboRec2)));
+
+			auto fibo = alloc->alloc<casm::par::Load>(0, 0,
+					alloc->alloc<
+							casm::OperatorInstruction<casm::LowerThanFunctor,
+									casm::TmpValueGet, casm::ConstGet,
+									casm::EnvTmpUpdater>>(0, 2,
+							std::make_pair(1, 1),
+							alloc->alloc<casm::IfElseInstruction>(1,
+									alloc->alloc<casm::MoveA>(0,
+											alloc->alloc<casm::Return>()),
+									fiboRec1)));
+			functions[9]->prepare(fibo, 3, 3);
+
+		}
+
 
 	const casm::Function* main = functions[mainFunction].get();
 	return utils::make_unique<casm::Program>(std::move(alloc),

@@ -8,24 +8,30 @@
 #ifndef ASM_CONTEXT_H_
 #define ASM_CONTEXT_H_
 
-#include "asm/value.h"
-#include "utils/ptr.h"
-#include <vector>
-
 namespace casm {
 
 class Instruction;
+class ContextBase;
 
-struct Accumulator {
-	const Value* value;
-};
+}
+
+#include "asm/value.h"
+#include "utils/ptr.h"
+#include <vector>
+#include "utils/spinlock.h"
+#include "utils/allocator.h"
+#include <mutex>
+
+namespace casm {
+
 
 struct Frame {
 	std::vector<std::shared_ptr<ValueWrapper>> environment;
 	std::vector<const Value*> temporaryValues;
 	const Instruction* nextInstruction;
 
-	Frame(unsigned envSize, unsigned tmpValuesCount) : environment(envSize), temporaryValues(tmpValuesCount), nextInstruction(nullptr) {}
+	Frame(unsigned envSize, unsigned tmpValuesCount);
+	~Frame();
 };
 
 struct Context {
@@ -33,10 +39,19 @@ struct Context {
 	Frame* currentFrame;
 	std::shared_ptr<ValueWrapper> accumulator;
 	const Instruction* nextInstruction;
-
+	ContextBase* const base;
 public:
+	// TODO: remove this constructor.
+	Context();
+	Context(ContextBase* base);
+
+	// This one should be removed as well probably.
 	void allocateFrame(unsigned envSize, unsigned tmpSize) {
-		frames.push_back(utils::make_unique<Frame>(envSize, tmpSize));
+		pushFrame(utils::make_unique<Frame>(envSize, tmpSize));
+	}
+
+	void pushFrame(std::unique_ptr<Frame>&& frame) {
+		frames.push_back(std::move(frame));
 		currentFrame = frames.back().get();
 	}
 
@@ -45,9 +60,7 @@ public:
 		currentFrame = frames.back().get();
 	}
 
-	int intFromTemporary(unsigned id) const {
-		return static_cast<const IntValue*>(currentFrame->temporaryValues[id])->getValue();
-	}
+	int intFromTemporary(unsigned id) const;
 };
 
 }

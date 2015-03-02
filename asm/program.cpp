@@ -7,6 +7,7 @@
 
 
 #include "asm/program.h"
+#include "asm/contextbase.h"
 
 namespace casm {
 
@@ -17,10 +18,25 @@ std::unique_ptr<Context> Program::generateStartingContext(int param, utils::Allo
 	auto instruction =
 			allocator->alloc<CallFunction>(main, std::vector<unsigned>({0}),
 			allocator->alloc<MoveFromA>(0,
-			allocator->alloc<Load>(0, 0,
+			allocator->alloc<seq::Load>(0, 0,
 			allocator->alloc<StoreResult>(keeper, 0))));
 	result->nextInstruction = instruction;
 	return std::move(result);
 }
+
+
+std::unique_ptr<Context> Program::generateStartingContextPar(int param, ContextBase* base, utils::Allocator<Instruction>* allocator, ResultKeeper* keeper) const {
+	auto result = utils::make_unique<Context>(base);
+	result->allocateFrame(1, 2);
+	result->currentFrame->environment[0] = generateValueWrapper(utils::make_unique<IntValue>(param));
+	auto instruction =
+			allocator->alloc<CallFunction>(main, std::vector<unsigned>({0}),
+			allocator->alloc<MoveFromA>(0,
+			allocator->alloc<par::Load>(0, 0,
+			allocator->alloc<par::StoreResult>(keeper, 0))));
+	result->nextInstruction = instruction;
+	return std::move(result);
+}
+
 
 }

@@ -54,6 +54,7 @@ public:
 	// This function generates context that first executes main function and then stores result in keeper.
 	// This function will use allocator to generate additional instructions. Allocator must be kept alive during whole execution of program.
 	std::unique_ptr<Context> generateStartingContext(int param, utils::Allocator<Instruction>* allocator, ResultKeeper* keeper) const;
+	std::unique_ptr<Context> generateStartingContextPar(int param, ContextBase* base, utils::Allocator<Instruction>* allocator, ResultKeeper* keeper) const;
 
 };
 

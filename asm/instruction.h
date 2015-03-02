@@ -12,7 +12,6 @@
 
 namespace casm {
 
-
 struct ResultKeeper {
 	int result;
 };
@@ -36,6 +35,7 @@ public:
 	}
 };
 
+namespace seq {
 class Load : public Instruction, public WithContinuation {
 private:
 	const unsigned source;
@@ -45,6 +45,55 @@ public:
 	Load(unsigned source, unsigned target, const Instruction* next) :
 		WithContinuation(next), source(source), target(target) {}
 };
+}
+
+namespace par {
+class Load : public Instruction, public WithContinuation {
+private:
+	const unsigned source;
+	const unsigned target;
+public:
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const;
+	Load(unsigned source, unsigned target, const Instruction* next) :
+		WithContinuation(next), source(source), target(target) {}
+};
+
+class CallFunctionPar : public Instruction, public WithContinuation {
+private:
+	const Function* function;
+	std::vector<unsigned> parameters;
+public:
+	CallFunctionPar(const Function* function, const std::vector<unsigned>& parameters, const Instruction* next) :
+		WithContinuation(next), function(function), parameters(parameters) {}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+};
+
+class SetValueAndWake : public Instruction {
+private:
+	const unsigned futureWrapperId;
+	const unsigned valueWrapperId;
+public:
+	SetValueAndWake(unsigned futureWrapperId, unsigned valueWrapperId)
+		: futureWrapperId(futureWrapperId), valueWrapperId(valueWrapperId) {}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+
+};
+
+class StoreResult : public Instruction {
+private:
+	// Never thought that I will use this keyword.
+	// Well, things sometimes change.
+	mutable ResultKeeper* keeper;
+	unsigned source;
+public:
+	StoreResult(ResultKeeper* keeper, unsigned source) : keeper(keeper), source(source) {}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+};
+
+
+
+}
+
 
 template
 <typename OpType, typename LGet, typename RGet, typename Updater>
@@ -74,7 +123,6 @@ public:
 };
 
 
-// Uses value from LAcc as condition.
 class IfElseInstruction : public Instruction {
 private:
 	unsigned conditionIndex;
@@ -89,6 +137,7 @@ public:
 
 // MoveA never blocks.
 // Note that it removes source from environment.
+// TODO: remove it? Maybe it should be merged with return.
 class MoveA : public Instruction, public WithContinuation {
 private:
 	const unsigned source;

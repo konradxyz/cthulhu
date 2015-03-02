@@ -32,8 +32,10 @@
 #include "test/test.h"
 #include<iostream>
 #include <cstdlib>
+#include "utils/logging.h"
 
 using namespace std;
+/*
 
 int main(int argc, char ** argv) {
 	int fun = atoi(argv[1]);
@@ -45,29 +47,15 @@ int main(int argc, char ** argv) {
 	auto ctx = program->generateStartingContext(param, &alloc, &keeper);
 	casm::Executor::execute(std::move(ctx));
 	cout << param << " " << keeper.result << endl;
-	/*	Program* main;
-	 if (argc <= 2) {
-	 printf("Usage: %s file.ct param\n", argv[0]);
-	 exit(1);
-	 }
+}
+*/
 
-	 main = parse(argv[1]);
-	 if (main) {
-	 parser::PrintAbsyn printer;
-	 printf("%s\n", printer.print(main));
-	 typechecker::Typechecker t;
-	 std::string error;
-	 ast::Program* program = t.Typecheck(main, &error);
-	 auto interpreter = GetInterpreter();
-	 if (program) {
-	 int result = interpreter->Run(program, atoi(argv[2]));
-	 printf("%d\n", result);
-	 } else
-	 printf("Error: %s\n", error.c_str());
-	 delete main;
-	 delete program;
-	 } else {
-	 printf("Syntax error\n");
-	 return 1;
-	 }*/
+
+
+int main(int argc, char ** argv) {
+	int threadc = atoi(argv[1]);
+	auto program = generateProgram(9);
+	casm::Executor e(20, threadc);
+	int result = e.run(program.get(), 8);
+	LOG(debug, result);
 }
