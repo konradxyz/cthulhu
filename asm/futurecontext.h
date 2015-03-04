@@ -38,7 +38,9 @@ private:
 	std::shared_ptr<ValueWrapper> valueWrapper;
 	std::vector<ContextUpdateRequest> requests;
 	utils::SpinLock lock;
+	bool hasNoValue = true;
 	ContextBase* const base;
+	unsigned rand = 1231231;
 public:
 	FutureContext(ContextBase* base) :
 			base(base) {

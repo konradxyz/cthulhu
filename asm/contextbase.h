@@ -28,6 +28,7 @@ class Instruction;
 class ContextBase {
 private:
 	std::atomic_int taskCount;
+	int unsafeTaskCount = 0;
 	const int maxTaskCount; // This is only a hint, we will not enforce it.
 	const int threadCount;
 	int waitingThreads = 0;
@@ -43,7 +44,7 @@ public:
 		retInstruction = generateStartingInstruction();
 	}
 	bool isFull() {
-		return taskCount >= maxTaskCount;
+		return unsafeTaskCount >= maxTaskCount;
 	}
 
 	void stop() {
@@ -57,7 +58,7 @@ public:
 	void pushTask(std::unique_ptr<Context>&& ctx) {
 		std::unique_lock<std::mutex> m(lock);
 		tasks.push_back(std::move(ctx));
-		++taskCount;
+		++unsafeTaskCount;
 		waitingForTask.notify_one();
 	}
 
@@ -65,16 +66,13 @@ public:
 		std::unique_lock<std::mutex> m(lock);
 		for (auto& ctx : *contexts) {
 			tasks.push_back(std::move(ctx));
-			++taskCount;
+			++unsafeTaskCount;
 			waitingForTask.notify_one();
 		}
 	}
 
 	std::unique_ptr<Context> popTask() {
-		LOG(debug, "popTask");
 		std::unique_lock<std::mutex> m(lock);
-		LOG(debug, waitingThreads);
-		LOG(debug, tasks.size());
 		while ( tasks.size() <= 0 ) {
 			++waitingThreads;
 			waitingForTask.wait(m);
@@ -82,7 +80,7 @@ public:
 		}
 		auto res = std::move(tasks.back());
 		tasks.pop_back();
-		--taskCount;
+		--unsafeTaskCount;
 		return std::move(res);
 	}
 

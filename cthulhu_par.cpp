@@ -37,15 +37,14 @@
 using namespace std;
 
 int main(int argc, char ** argv) {
-	int fun = atoi(argv[1]);
+	int threads = atoi(argv[1]);
 	int param = atoi(argv[2]);
-	cout << "Single thread, function " << fun << " with param " << param << endl;
+	cout << "Multiple threads " << threads << " with param " << param << endl;
 	utils::Allocator<casm::Instruction> alloc;
-	casm::ResultKeeper keeper;
-	auto program = generateProgram(fun);
-	auto ctx = program->generateStartingContext(param, &alloc, &keeper);
-	casm::Executor::execute(std::move(ctx));
-	cout << param << " " << keeper.result << endl;
+	auto program = generateProgram(9);
+	casm::Executor e(2 * threads, threads);
+	auto result = e.run(program.get(), param);
+	cout << "Multiple threads " << threads << " with param " << param << " result " << result << endl;
 }
 
 

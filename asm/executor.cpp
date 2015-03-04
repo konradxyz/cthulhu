@@ -16,7 +16,6 @@ void executeThread(ContextBase* base) {
 	LOG(debug, "running thread");
 	auto ctx = base->popTask();
 	while (ctx != nullptr ) {
-		LOG(debug, "next task running thread");
 		Executor::execute(std::move(ctx));
 		ctx = base->popTask();
 	}

@@ -15,6 +15,6 @@
 
 #define LOG(level, msg) { BOOST_LOG_TRIVIAL(level) << msg; }
 
-
+#define ASSERT(e) { assert(e); }
 
 #endif /* UTILS_LOGGING_H_ */

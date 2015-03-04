@@ -22,10 +22,10 @@ std::shared_ptr<ValueWrapper> generateValueWrapper(
 	return std::make_shared<ValueWrapper>(std::move(value));
 }
 ValueWrapper::ValueWrapper(std::unique_ptr<FutureContext>&& future) :
-		type(FUTURE_VALUE), future(std::move(future)) {
+		type(FUTURE_VALUE), value(nullptr), future(std::move(future)) {
 }
 ValueWrapper::ValueWrapper(std::unique_ptr<Value>&& value) :
-		type(REAL_VALUE), value(std::move(value)) {
+		type(REAL_VALUE), value(std::move(value)), future(nullptr) {
 }
 
 ValueWrapper::~ValueWrapper() {

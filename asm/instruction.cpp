@@ -18,9 +18,9 @@ namespace casm {
 namespace {
 
 void fillFrame(Frame* newFrame, Frame* srcFrame,
-		const std::vector<unsigned> parameters) {
+		const std::vector<unsigned>& parameters) {
 	for (unsigned i = 0; i < parameters.size(); ++i) {
-		newFrame->environment[i] = srcFrame->environment[parameters[i]];
+		newFrame->environment[i] = std::move(srcFrame->environment[parameters[i]]);
 	}
 }
 
@@ -41,12 +41,12 @@ std::unique_ptr<Context> currentThreadCall(std::unique_ptr<Context>&& context, s
 
 std::unique_ptr<Context> otherThreadCall(std::unique_ptr<Context>&& context, std::unique_ptr<Frame>&& frame,
 		const Function* function, const Instruction* continuation) {
-	LOG(debug, "base");
+
 	if ( context->base->isFull() ) {
-		LOG(debug, "queue full");
+
 		return currentThreadCall(std::move(context), std::move(frame), function, continuation);
 	}
-	LOG(debug, "queue not full");
+
 	// Generate wrapper to store result.
 	auto futureWrapper = casm::generateFutureWrapper(context->base);
 	// Generate context that will be queued
@@ -54,7 +54,7 @@ std::unique_ptr<Context> otherThreadCall(std::unique_ptr<Context>&& context, std
 	// Prepare first frame - it will wake all waiting contexts.
 	auto retFrame = utils::make_unique<Frame>(2, 1);
 	retFrame->environment[0] = futureWrapper;
-	LOG(debug, "middle");
+
 	retFrame->nextInstruction = context->base->getRetInstruction(); // TODO: change to sth meaningful
 	parContext->pushFrame(std::move(retFrame));
 	// Prepare second frame - this one contains parameters:
@@ -125,20 +125,17 @@ std::unique_ptr<Context> Load::perform(std::unique_ptr<Context>&& context) const
 namespace par {
 
 std::unique_ptr<Context> Load::perform(std::unique_ptr<Context>&& context) const {
-	LOG(debug, "LOAD");
+
 	auto frame = context->currentFrame;
 	auto src = frame->environment[source].get();
 	context->nextInstruction = getContinuation();
 	switch (src->getType()) {
 	case ValueType::REAL_VALUE:
 		frame->temporaryValues[target] = src->getValue();
-		LOG(debug, "LOAD done - real");
+
 		return std::move(context);
 	case ValueType::FUTURE_VALUE: {
 		auto res = src->getFutureContext()->updateContext(std::move(context), source, target);
-		LOG(debug, "LOAD done future ");
-		if ( res == nullptr )
-			LOG(debug, "blocking context");
 		return std::move(res);
 	}
 	default:
@@ -147,27 +144,23 @@ std::unique_ptr<Context> Load::perform(std::unique_ptr<Context>&& context) const
 }
 
 std::unique_ptr<Context> CallFunctionPar::perform(std::unique_ptr<Context>&& context) const {
-	LOG(debug, "CALLPAR");
-	auto res = otherThreadCall(std::move(context),
+
+return otherThreadCall(std::move(context),
 			prepareFrameParams(context.get(), function, parameters), function,
 			getContinuation());
-	LOG(debug, "CALLPAR done");
-	return std::move(res);
 }
 
 std::unique_ptr<Context> SetValueAndWake::perform(std::unique_ptr<Context>&& context) const {
-	LOG(debug, "SETVAL");
 	auto future = context->currentFrame->environment[futureWrapperId]->getFutureContext();
 	future->setValueAndWakeAll(std::move(context->currentFrame->environment[valueWrapperId]));
-	LOG(debug, "SETVAL done");
 	return nullptr;
 }
 
 std::unique_ptr<Context> StoreResult::perform(std::unique_ptr<Context>&& context) const {
-	LOG(debug, "STORE");
+	LOG(debug, "storing");
 	keeper->result = context->intFromTemporary(source);
 	context->base->stop();
-	LOG(debug, "STORE done");
+
 	return nullptr;
 }
 
