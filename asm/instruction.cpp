@@ -84,6 +84,36 @@ std::unique_ptr<Context> performCall(std::unique_ptr<Context>&& context,
 
 }
 
+namespace dev {
+void WithParameters::prepareParameters(
+		std::vector<std::shared_ptr<ValueWrapper>>* input,
+		std::vector<std::shared_ptr<ValueWrapper>>* output) const {
+	for ( const auto& p : moveParams ) {
+		(*output)[p.second] = std::move((*input)[p.first]);
+	}
+	for ( const auto& p: copyParams ) {
+		(*output)[p.second] = (*input)	[p.first];
+	}
+}
+
+std::unique_ptr<Frame> Call::generateFrame(Frame* input) const {
+	auto res = utils::make_unique<Frame>(function->getEnvSize(), function->getTmpSize());
+	this->prepareParameters(&input->environment, &res->environment);
+	return std::move(res);
+}
+
+std::unique_ptr<Context> CallFunctionSeq::perform(std::unique_ptr<Context>&& context) const {
+	auto frame = generateFrame(context->currentFrame);
+	return currentThreadCall(std::move(context), std::move(frame), this->function, this->getContinuation());
+}
+
+std::unique_ptr<Context> CallFunctionPar::perform(std::unique_ptr<Context>&& context) const {
+	auto frame = generateFrame(context->currentFrame);
+	return otherThreadCall(std::move(context), std::move(frame), this->function, this->getContinuation());
+}
+
+}
+
 std::unique_ptr<Context> MoveA::perform(std::unique_ptr<Context>&& context) const {
 	context->accumulator = std::move(context->currentFrame->environment[source]);
 	context->nextInstruction = this->getContinuation();

@@ -16,6 +16,14 @@
 
 namespace casm {
 
+class IdOperator {
+public:
+	template<typename T>
+	inline T operator()(T t) const {
+		return t;
+	}
+};
+
 class AccUpdater {
 public:
 	inline void operator()(casm::Context* ctx, int val) const {

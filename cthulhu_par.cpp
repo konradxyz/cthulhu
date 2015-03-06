@@ -37,14 +37,25 @@
 using namespace std;
 
 int main(int argc, char ** argv) {
-	int threads = atoi(argv[1]);
-	int param = atoi(argv[2]);
-	cout << "Multiple threads " << threads << " with param " << param << endl;
+	int fun = atoi(argv[1]);
+	int threads = atoi(argv[2]);
+	int param = atoi(argv[3]);
+	std::atomic_int tmp(0);
+	if ( !tmp.is_lock_free() ) {
+		cout << "atomic_int not lock free" << endl;
+	}
+	std::atomic_bool b ( false);
+	if ( !b.is_lock_free() ) {
+		cout << "atomic_bool not lock free" << endl;
+	}
+	cout << "Function " << fun << " multiple threads " << threads
+			<< " with param " << param << endl;
 	utils::Allocator<casm::Instruction> alloc;
-	auto program = generateProgram(9);
+	auto program = generateProgram(fun);
 	casm::Executor e(2 * threads, threads);
 	auto result = e.run(program.get(), param);
-	cout << "Multiple threads " << threads << " with param " << param << " result " << result << endl;
+	cout << "Function " << fun << " multiple threads " << threads
+			<< " with param " << param << " result " << result << endl;
 }
 
 

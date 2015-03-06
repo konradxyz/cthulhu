@@ -208,6 +208,134 @@ std::unique_ptr<casm::Program> generateProgram(int mainFunction) {
 
 		}
 
+	{
+		unsigned id = 10;
+		auto ret = alloc->alloc<casm::seq::Load>(1, 1,
+				alloc->alloc<casm::seq::Load>(2, 2,
+						alloc->alloc<
+								casm::OperatorInstruction<std::plus<int>,
+										casm::TmpValueGet,
+										casm::TmpValueGet,
+										casm::AccUpdater>>(1, 2,
+								alloc->alloc<casm::Return>())));
+
+		auto fiboRec2 = alloc->alloc<
+				casm::OperatorInstruction<std::minus<int>, casm::TmpValueGet,
+						casm::ConstGet, casm::EnvUpdater>>(0, 2, 2,
+				alloc->alloc<casm::dev::CallFunctionSeq>(functions[id].get(),
+						std::vector<std::pair<unsigned, unsigned>>(),
+						std::vector<std::pair<unsigned, unsigned>>({ { 2, 0 } }),
+						alloc->alloc<casm::MoveFromA>(2, ret)));
+
+		auto fiboRec1 = alloc->alloc<
+				casm::OperatorInstruction<std::minus<int>, casm::TmpValueGet,
+						casm::ConstGet, casm::EnvUpdater>>(0, 1, 1,
+				alloc->alloc<casm::dev::CallFunctionSeq>(functions[id].get(),
+						std::vector<std::pair<unsigned, unsigned>>(),
+						std::vector<std::pair<unsigned, unsigned>>({ { 1, 0 } }),
+						alloc->alloc<casm::MoveFromA>(1, fiboRec2)));
+		auto fibo = alloc->alloc<casm::seq::Load>(0, 0,
+				alloc->alloc<
+						casm::OperatorInstruction<casm::LowerThanFunctor,
+								casm::TmpValueGet, casm::ConstGet,
+								casm::EnvTmpUpdater>>(0, 2,
+						std::make_pair(1, 1),
+						alloc->alloc<casm::IfElseInstruction>(1,
+								alloc->alloc<casm::MoveA>(0,
+										alloc->alloc<casm::Return>()),
+								fiboRec1)));
+		functions[id]->prepare(fibo, 3, 3);
+
+	}
+
+
+	// linear fibo - evaluate fibo(M) n - times.
+	// add those values
+	// return result.
+	// M = 30, n - param
+
+	{
+		unsigned id = 11;
+		int m = 30;
+		// 1 <- fibo(M)
+		// 2 <- linear(n - 1)
+		auto ret = alloc->alloc<casm::seq::Load>(1, 1,
+				   alloc->alloc<casm::seq::Load>(2, 2,
+				   alloc->alloc<casm::OperatorInstruction<std::plus<int>,
+										casm::TmpValueGet, casm::TmpValueGet,
+										casm::AccUpdater>>(1, 2,
+				   alloc->alloc<casm::Return>())));
+
+
+		auto recursive =
+						alloc->alloc<casm::OperatorInstruction<std::minus<int>, casm::TmpValueGet,
+								casm::ConstGet, casm::EnvUpdater>>(0, 1, 2,
+						alloc->alloc<casm::dev::CallFunctionSeq>(functions[id].get(),
+								std::vector<std::pair<unsigned, unsigned>>(),
+								std::vector<std::pair<unsigned, unsigned>>({ { 2, 0 } }),
+								alloc->alloc<casm::MoveFromA>(2, ret)));
+		auto current =
+				alloc->alloc<casm::UnaryOperatorInstruction<casm::IdOperator, casm::ConstGet, casm::EnvUpdater>>(m, 1,
+				alloc->alloc<casm::dev::CallFunctionSeq>(functions[10].get(),
+										std::vector<std::pair<unsigned, unsigned>>(),
+										std::vector<std::pair<unsigned, unsigned>>({ { 1, 0 } }),
+										alloc->alloc<casm::MoveFromA>(1, recursive)));
+		auto linear =
+				alloc->alloc<casm::seq::Load>(0, 0,
+				alloc->alloc<casm::OperatorInstruction<casm::LowerThanFunctor,
+							 	 casm::TmpValueGet, casm::ConstGet, casm::EnvTmpUpdater>>
+								 (0, 1, std::make_pair(1, 1),
+				alloc->alloc<casm::IfElseInstruction>(1,
+						alloc->alloc<casm::MoveA>(0,alloc->alloc<casm::Return>()),
+						current)));
+
+
+		functions[id]->prepare(linear, 3, 3);
+
+	}
+
+
+	{
+		unsigned id = 12;
+		int m = 30;
+		// 1 <- fibo(M)
+		// 2 <- linear(n - 1)
+		auto ret = alloc->alloc<casm::par::Load>(1, 1,
+				   alloc->alloc<casm::par::Load>(2, 2,
+				   alloc->alloc<casm::OperatorInstruction<std::plus<int>,
+										casm::TmpValueGet, casm::TmpValueGet,
+										casm::AccUpdater>>(1, 2,
+				   alloc->alloc<casm::Return>())));
+
+
+		auto recursive =
+						alloc->alloc<casm::OperatorInstruction<std::minus<int>, casm::TmpValueGet,
+								casm::ConstGet, casm::EnvUpdater>>(0, 1, 2,
+						alloc->alloc<casm::dev::CallFunctionSeq>(functions[id].get(),
+								std::vector<std::pair<unsigned, unsigned>>(),
+								std::vector<std::pair<unsigned, unsigned>>({ { 2, 0 } }),
+								alloc->alloc<casm::MoveFromA>(2, ret)));
+		auto current =
+				alloc->alloc<casm::UnaryOperatorInstruction<casm::IdOperator, casm::ConstGet, casm::EnvUpdater>>(m, 1,
+				alloc->alloc<casm::dev::CallFunctionPar>(functions[10].get(),
+										std::vector<std::pair<unsigned, unsigned>>(),
+										std::vector<std::pair<unsigned, unsigned>>({ { 1, 0 } }),
+										alloc->alloc<casm::MoveFromA>(1, recursive)));
+		auto linear =
+				alloc->alloc<casm::par::Load>(0, 0,
+				alloc->alloc<casm::OperatorInstruction<casm::LowerThanFunctor,
+							 	 casm::TmpValueGet, casm::ConstGet, casm::EnvTmpUpdater>>
+								 (0, 1, std::make_pair(1, 1),
+				alloc->alloc<casm::IfElseInstruction>(1,
+						alloc->alloc<casm::MoveA>(0,alloc->alloc<casm::Return>()),
+						current)));
+
+
+		functions[id]->prepare(linear, 3, 3);
+
+	}
+
+
 
 	const casm::Function* main = functions[mainFunction].get();
 	return utils::make_unique<casm::Program>(std::move(alloc),

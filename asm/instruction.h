@@ -16,88 +16,149 @@ struct ResultKeeper {
 	int result;
 };
 
-
-
 class Instruction {
 public:
-	virtual std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const = 0;
-	virtual ~Instruction(){}
+	virtual std::unique_ptr<Context> perform(
+			std::unique_ptr<Context>&& context) const = 0;
+	virtual ~Instruction() {
+	}
 };
-
 
 class WithContinuation {
 private:
 	const Instruction* nextInstruction;
 public:
-	WithContinuation(const Instruction* nextInstruction) : nextInstruction(nextInstruction) {}
+	WithContinuation(const Instruction* nextInstruction) :
+			nextInstruction(nextInstruction) {
+	}
 	const Instruction* getContinuation() const {
 		return nextInstruction;
 	}
 };
 
+namespace dev {
+class WithParameters {
+private:
+	const std::vector<std::pair<unsigned, unsigned>> copyParams;
+	const std::vector<std::pair<unsigned, unsigned>> moveParams;
+public:
+	WithParameters(const std::vector<std::pair<unsigned, unsigned>>& copyParams,
+			const std::vector<std::pair<unsigned, unsigned>> moveParams) :
+			copyParams(copyParams), moveParams(moveParams) {
+	}
+	void prepareParameters(std::vector<std::shared_ptr<ValueWrapper>>* input,
+			std::vector<std::shared_ptr<ValueWrapper>>* output) const;
+};
+
+class Call: public WithParameters, public WithContinuation {
+protected:
+	const Function* function;
+public:
+	Call(const Function* function,
+			const std::vector<std::pair<unsigned, unsigned>>& copyParams,
+			const std::vector<std::pair<unsigned, unsigned>> moveParams,
+			const Instruction* continuation) :
+			WithParameters(copyParams, moveParams), WithContinuation(
+					continuation), function(function) {}
+	std::unique_ptr<Frame> generateFrame(Frame* input) const;
+};
+
+class CallFunctionSeq: public Call, public Instruction {
+public:
+	CallFunctionSeq(
+			const Function* function,
+			const std::vector<std::pair<unsigned, unsigned>>& copyParams,
+			const std::vector<std::pair<unsigned, unsigned>> moveParams,
+			const Instruction* continuation) :
+			Call(function, copyParams, moveParams, continuation) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const;
+};
+
+
+class CallFunctionPar: public Call, public Instruction {
+public:
+	CallFunctionPar(
+			const Function* function,
+			const std::vector<std::pair<unsigned, unsigned>>& copyParams,
+			const std::vector<std::pair<unsigned, unsigned>> moveParams,
+			const Instruction* continuation) :
+			Call(function, copyParams, moveParams, continuation) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const;
+};
+
+}
+
 namespace seq {
-class Load : public Instruction, public WithContinuation {
+class Load: public Instruction, public WithContinuation {
 private:
 	const unsigned source;
 	const unsigned target;
 public:
 	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const;
 	Load(unsigned source, unsigned target, const Instruction* next) :
-		WithContinuation(next), source(source), target(target) {}
+			WithContinuation(next), source(source), target(target) {
+	}
 };
 }
 
 namespace par {
-class Load : public Instruction, public WithContinuation {
+class Load: public Instruction, public WithContinuation {
 private:
 	const unsigned source;
 	const unsigned target;
 public:
 	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const;
 	Load(unsigned source, unsigned target, const Instruction* next) :
-		WithContinuation(next), source(source), target(target) {}
+			WithContinuation(next), source(source), target(target) {
+	}
 };
 
-class CallFunctionPar : public Instruction, public WithContinuation {
+class CallFunctionPar: public Instruction, public WithContinuation {
 private:
 	const Function* function;
 	std::vector<unsigned> parameters;
 public:
-	CallFunctionPar(const Function* function, const std::vector<unsigned>& parameters, const Instruction* next) :
-		WithContinuation(next), function(function), parameters(parameters) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	CallFunctionPar(const Function* function,
+			const std::vector<unsigned>& parameters, const Instruction* next) :
+			WithContinuation(next), function(function), parameters(parameters) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
 
-class SetValueAndWake : public Instruction {
+class SetValueAndWake: public Instruction {
 private:
 	const unsigned futureWrapperId;
 	const unsigned valueWrapperId;
 public:
-	SetValueAndWake(unsigned futureWrapperId, unsigned valueWrapperId)
-		: futureWrapperId(futureWrapperId), valueWrapperId(valueWrapperId) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	SetValueAndWake(unsigned futureWrapperId, unsigned valueWrapperId) :
+			futureWrapperId(futureWrapperId), valueWrapperId(valueWrapperId) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 
 };
 
-class StoreResult : public Instruction {
+class StoreResult: public Instruction {
 private:
 	// Never thought that I will use this keyword.
 	// Well, things sometimes change.
 	mutable ResultKeeper* keeper;
 	unsigned source;
 public:
-	StoreResult(ResultKeeper* keeper, unsigned source) : keeper(keeper), source(source) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	StoreResult(ResultKeeper* keeper, unsigned source) :
+			keeper(keeper), source(source) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
-
-
 
 }
 
-
-template
-<typename OpType, typename LGet, typename RGet, typename Updater>
-class OperatorInstruction : public Instruction, public WithContinuation {
+template<typename OpType, typename LGet, typename RGet, typename Updater>
+class OperatorInstruction: public Instruction, public WithContinuation {
 private:
 	OpType op;
 	LGet left;
@@ -113,7 +174,8 @@ public:
 			WithContinuation(next), left(left), right(right) {
 	}
 
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override {
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override {
 		auto ctx = context.get();
 		int result = op(left(ctx), right(ctx));
 		updater(ctx, result);
@@ -123,81 +185,118 @@ public:
 };
 
 
-class IfElseInstruction : public Instruction {
+template<typename OpType, typename Get, typename Updater>
+class UnaryOperatorInstruction: public Instruction, public WithContinuation {
+private:
+	OpType op;
+	Get getter;
+	Updater updater;
+public:
+	template<typename G, typename U>
+	UnaryOperatorInstruction(G g, U u, const Instruction* next) :
+			WithContinuation(next), getter(g), updater(u) {
+	}
+
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override {
+		auto ctx = context.get();
+		int result = op(getter(ctx));
+		updater(ctx, result);
+		ctx->nextInstruction = getContinuation();
+		return std::move(context);
+	}
+};
+
+
+class IfElseInstruction: public Instruction {
 private:
 	unsigned conditionIndex;
 	const Instruction* trueContinuation;
 	const Instruction* falseContinuation;
 public:
-	IfElseInstruction(unsigned conditionIndex, const Instruction* trueContinuation, const Instruction* falseContinuation) :
-		conditionIndex(conditionIndex), trueContinuation(trueContinuation), falseContinuation(falseContinuation) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	IfElseInstruction(unsigned conditionIndex,
+			const Instruction* trueContinuation,
+			const Instruction* falseContinuation) :
+			conditionIndex(conditionIndex), trueContinuation(trueContinuation), falseContinuation(
+					falseContinuation) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
-
 
 // MoveA never blocks.
 // Note that it removes source from environment.
 // TODO: remove it? Maybe it should be merged with return.
-class MoveA : public Instruction, public WithContinuation {
+class MoveA: public Instruction, public WithContinuation {
 private:
 	const unsigned source;
 public:
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
-	MoveA(unsigned source, const Instruction* next) : WithContinuation(next), source(source) {}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
+	MoveA(unsigned source, const Instruction* next) :
+			WithContinuation(next), source(source) {
+	}
 };
 
-class MoveFromA : public Instruction, public WithContinuation {
+class MoveFromA: public Instruction, public WithContinuation {
 private:
 	const unsigned target;
 public:
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
-	MoveFromA(unsigned target, const Instruction* next) : WithContinuation(next), target(target) {}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
+	MoveFromA(unsigned target, const Instruction* next) :
+			WithContinuation(next), target(target) {
+	}
 };
 
-class Return : public Instruction {
+class Return: public Instruction {
 public:
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
-
 
 class LowerThanFunctor {
 public:
-	int operator() (int l, int r) const {
+	int operator()(int l, int r) const {
 		return l < r;
 	}
 };
 
-class CallFunction : public Instruction, public WithContinuation {
+class CallFunction: public Instruction, public WithContinuation {
 private:
 	const Function* function;
 	std::vector<unsigned> parameters;
 public:
-	CallFunction(const Function* function, const std::vector<unsigned>& parameters, const Instruction* next) :
-		WithContinuation(next), function(function), parameters(parameters) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	CallFunction(const Function* function,
+			const std::vector<unsigned>& parameters, const Instruction* next) :
+			WithContinuation(next), function(function), parameters(parameters) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
 
-
 // This instruction reads value from l, treats it as int and inserts into keeper.
-class StoreResult : public Instruction {
+class StoreResult: public Instruction {
 private:
 	// Never thought that I will use this keyword.
 	// Well, things sometimes change.
 	mutable ResultKeeper* keeper;
 	unsigned source;
 public:
-	StoreResult(ResultKeeper* keeper, unsigned source) : keeper(keeper), source(source) {}
-	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const override;
+	StoreResult(ResultKeeper* keeper, unsigned source) :
+			keeper(keeper), source(source) {
+	}
+	std::unique_ptr<Context> perform(std::unique_ptr<Context>&& context) const
+			override;
 };
 
 /*
-class LoadR : public Load {
+ class LoadR : public Load {
 
-};
-*/
+ };
+ */
 
-};
-
-
+}
+;
 
 #endif /* ASM_INSTRUCTION_H_ */

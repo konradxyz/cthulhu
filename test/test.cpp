@@ -124,6 +124,12 @@ BOOST_AUTO_TEST_CASE(par_fibo9) {
 	programTestPar(9, 9, 34);
 }
 
+
+BOOST_AUTO_TEST_CASE(fibo10) {
+	programTestPar(10, 9, 34);
+}
+
+
 /*
 BOOST_AUTO_TEST_CASE(threadTest) {
 	int target = 0;
