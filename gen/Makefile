@@ -5,13 +5,13 @@ BISON = bison
 LATEX = latex
 DVIPS = dvips
 
-all: Testcthulhu cthulhu.ps
+all: Testcthulhu
 
 clean:
 	rm -f *.o cthulhu.dvi cthulhu.aux cthulhu.log cthulhu.ps Testcthulhu
 
 distclean:
-	 rm -f *.o Absyn.C Absyn.H Test.C Parser.C Parser.H Lexer.C Skeleton.C Skeleton.H Printer.C Printer.H cthulhu.l cthulhu.y cthulhu.tex cthulhu.dvi cthulhu.aux cthulhu.log cthulhu.ps Testcthulhu Makefile
+	 rm -f *.o Absyn.C Absyn.H Test.C Parser.C Parser.H Lexer.C Skeleton.C Skeleton.H Printer.C Printer.H cthulhu.l cthulhu.y cthulhu.tex cthulhu.dvi cthulhu.aux cthulhu.log cthulhu.ps Testcthulhu Parser.output
 
 Testcthulhu: Absyn.o Lexer.o Parser.o Printer.o Test.o Skeleton.o
 	@echo "Linking Testcthulhu..."
@@ -24,7 +24,7 @@ Lexer.C: cthulhu.l
 	${FLEX} -oLexer.C cthulhu.l
 
 Parser.C: cthulhu.y
-	${BISON} cthulhu.y -o Parser.C
+	${BISON}  cthulhu.y -v -o Parser.C
 
 Lexer.o: Lexer.C Parser.H
 	${CC} ${CCFLAGS} -c Lexer.C 

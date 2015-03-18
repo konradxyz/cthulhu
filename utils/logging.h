@@ -13,7 +13,7 @@
 #include <iostream>
 #include <thread>
 
-#define LOG(level, msg) { BOOST_LOG_TRIVIAL(level) << msg; }
+#define LOG(level, msg) {/* BOOST_LOG_TRIVIAL(level) << msg;*/ }
 
 #define ASSERT(e) { assert(e); }
 

@@ -1,25 +1,45 @@
 -- programs ------------------------------------------------
 
-entrypoints Program ;
-
 RealProgram.    Program ::= [TopDef] ;
 
-FnDef.     TopDef ::= Ident "::" Type Ident [Ident] "=" Expr ";" ;
-
-
+FnDef.             TopDef ::= Ident "::" Type ":" Ident [Ident] "=" Expr ";" ;
+FnDefTemplate.     TopDef ::= Ident DeclTypeList "::" Type ":" Ident [Ident] "=" Expr ";" ;
+DataTypeDef.       TopDef ::= "data" Ident [Ident] "=" [DataVariant] ";" ;  
 separator TopDef "" ;
 
+RealDeclTypeList. DeclTypeList ::= "<" [DeclType] ">" ;
+
+RealDeclType. DeclType ::= Ident ;
+separator DeclType "" ;
 
 
 separator Ident "" ;
 
-IntType.    Type1 ::= "int" ;
-FnType. Type  ::= Type1 "->" Type ;
+RealDataVariant. DataVariant ::= Ident [TypeListElem] ;
+separator nonempty DataVariant "|" ;
 
-coercions  Type 1 ;
+
+RealSimpleType. SimpleType ::= "(" Type ")" ;
+IdSimpleType.   SimpleType ::= Ident ;
+
+ComplexType.  Type1 ::= Ident [SimpleType] ;
+
+FnType.           Type  ::= Type1 "->" Type ;
+
+separator SimpleType "" ;
+separator Type "" ;
+coercions Type 1;
+
+RealTypeListElem. TypeListElem ::= "(" Type ")" ;
+IdTypeListElem. TypeListElem ::= Ident ;
+separator TypeListElem "";
+
+
+
 
 -- Expressions ---------------------------------------------
-EVar.      Expr2 ::= Ident ;
+EVar.              Expr2 ::= Ident ;
+EVarTemplate.      Expr2 ::= Ident "<" [TypeListElem] ">" ;
 
 ELitInt.   Expr2 ::= Integer ;
 
@@ -27,7 +47,13 @@ EApply.    Expr1 ::= Expr1 Expr2 ;
 
 ELet.      Expr ::= "let" Ident "=" Expr1 "in" Expr ;
 
-ECase.     Expr ::= "if" Expr1 "then" Expr "else" Expr ;
+EIfElse.     Expr ::= "if" Expr1 "then" Expr "else" Expr ;
+ECase.       Expr ::= "case" Expr1 "of" [CaseVariant] ;
+
+
+
+RealCaseVariant. CaseVariant ::= Ident [Ident] "->" Expr ;
+terminator CaseVariant ";" ;
 
 coercions  Expr 2 ;
 

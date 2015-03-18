@@ -1,0 +1,48 @@
+1. Gather all type templates -> there will be no need to instantianize those.
+2. Gather all function templates.
+3. Gather all function instances and dependencies.
+Ad3. How ?
+BFS from main function.
+Create graph.
+
+
+
+queue : queue of callee callee by name, template params
+
+while ( !empty(queue) ) {
+  next = dequeue(queue)
+  done[next] = true
+  callers[next]  = [] 
+  remaining = gather_all(next)
+  for ( s in remaining )
+    callers[s][] = next
+    if !done[s]
+      queue[] = s
+}
+
+4. Associate type with functions:
+  a) simple
+  b) complex - function is complex if and only if there exists cycle accessible from this function
+
+
+5. Prepare code for all instances.
+
+
+
+Ad5: this one is difficult
+
+Simple block - its goal is to calculate some value?
+
+NO!
+Expression graph.
+We need an expression graph.
+
+How do you create an expression graph?
+
+First of all - we need to translate our expression.
+We need to remove all single param things and replace them with multi params - simply compress it.
+What next?
+
+
+
+

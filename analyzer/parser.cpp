@@ -4,8 +4,8 @@
 
 namespace parser {
 
-Program* Parser::Parse(FILE *inp) {
-  return pProgram(inp);
+std::unique_ptr<Program> Parser::Parse(FILE *inp) {
+  return std::unique_ptr<Program>(pProgram(inp));
 }
 
 

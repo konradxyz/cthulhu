@@ -1,0 +1,39 @@
+
+
+
+data List a = Nil | Const a (List a) ;
+
+
+map :: (a -> b) -> List a -> List b :
+map f i = 1 ;
+
+
+map <a b> :: (a -> b) -> List a -> List b :
+map fun input = case input of
+  Nil -> Nil <b> ;
+  Const n tail -> Const (fun n) (map <a b> fun tail);
+;
+
+
+
+fibo :: int -> int :
+fibo n = if lt n 2 then n else add (fibo (sub n 1)) (fibo (sub n 2)) ;
+
+natural :: int -> List int :
+natural = naturalFrom 0 ;
+
+naturalFrom :: int -> int -> List int :
+naturalFrom current n = if lt n 1 then 
+    Nil <int> 
+  else
+    Const <int> current (naturalFrom (add current 1) (sub n 1)) ;
+
+fold <a b> :: (a -> b -> b) -> b -> List a -> b :
+fold fun acc input = case input of
+  Nil -> acc ;
+  Const n tail -> fold<a b> fun (fun n acc) tail ;
+;
+
+
+call :: int -> int :
+call n = fold<int int> add 0 (map fibo (natural n)) ;
